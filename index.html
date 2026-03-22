@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- ── FOUC Prevention: hide body immediately, before any paint ── -->
+<style>body { visibility: hidden }</style>
+
 <!-- ── SEO ── -->
 <title>Manvora Intelligence — Digital Presence, Crafted with Precision</title>
 <meta name="description" content="Manvora Intelligence — bespoke digital platforms and intelligent AI systems, engineered for businesses that demand clarity, elegance, and measurable impact.">
@@ -115,6 +118,12 @@ body::before {
 a { color:inherit; text-decoration:none }
 button { font:inherit; border:none; background:none; cursor:pointer }
 img { display:block; max-width:100% }
+
+/* Touch UX: remove tap flash, improve responsiveness */
+a, button, [onclick] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
 
 ::-webkit-scrollbar { width:3px }
 ::-webkit-scrollbar-track { background: var(--c-paper) }
@@ -314,6 +323,10 @@ img { display:block; max-width:100% }
   display: block;
   transition: all .3s ease;
 }
+/* Burger → X when drawer open */
+.nav-burger.active span:nth-child(1) { transform: translateY(6px) rotate(45deg) }
+.nav-burger.active span:nth-child(2) { opacity: 0; transform: scaleX(0) }
+.nav-burger.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg) }
 
 /* ═══════════════════════════════════════════
    MOBILE DRAWER
@@ -365,6 +378,7 @@ img { display:block; max-width:100% }
   width: 38%;
   background: var(--c-ivory);
   z-index: 0;
+  will-change: transform;
 }
 .hero-col::before {
   content: '';
@@ -2709,9 +2723,12 @@ footer { border-top: 4px solid var(--c-gold) !important }
    ANIMATION HELPERS
 ═══════════════════════════════════════════ */
 
-/* Floating geo ornament */
-.hero-geo {
-  animation: floatGeo 7s ease-in-out infinite;
+/* Floating geo ornament — GPU promoted, respects reduced-motion */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-geo {
+    animation: floatGeoRich 8s ease-in-out infinite;
+    will-change: transform;
+  }
 }
 
 /* Hero headline words — applied via JS */
@@ -2733,9 +2750,10 @@ footer { border-top: 4px solid var(--c-gold) !important }
   transition: opacity .4s, transform .4s;
 }
 
-/* Pulsing availability dot */
+/* Pulsing availability dot — single animation */
 .meta-dot {
-  animation: redPulse 2.8s ease infinite, pulse 2.8s ease infinite;
+  animation: pulse 2.8s ease infinite;
+  will-change: opacity;
 }
 
 /* Button shimmer effect */
@@ -2818,23 +2836,45 @@ footer { border-top: 4px solid var(--c-gold) !important }
   position: fixed;
   inset: 0;
   background: #0C0A09;
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 20px;
-  transition: opacity .6s ease, visibility .6s ease;
+  transition: opacity .7s cubic-bezier(.25,.46,.45,.94), visibility .7s cubic-bezier(.25,.46,.45,.94);
 }
-#page-loader.hidden { opacity:0; visibility:hidden; pointer-events:none }
+#page-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
 .loader-logo {
   opacity: 0;
-  animation: fade .5s ease .1s both;
+  animation: loaderFadeUp .55s cubic-bezier(.16,1,.3,1) .05s both;
+}
+@keyframes loaderFadeUp {
+  from { opacity:0; transform:translateY(10px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+.loader-tagline {
+  opacity: 0;
+  animation: loaderFadeUp .55s cubic-bezier(.16,1,.3,1) .25s both;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: .58rem;
+  font-weight: 400;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.28);
+}
+.loader-bar-wrap {
+  opacity: 0;
+  animation: loaderFadeUp .4s ease .4s both;
 }
 .loader-bar {
   width: 120px;
   height: 1px;
-  background: rgba(255,255,255,.12);
+  background: rgba(255,255,255,.1);
   position: relative;
   overflow: hidden;
 }
@@ -2844,28 +2884,44 @@ footer { border-top: 4px solid var(--c-gold) !important }
   inset-block: 0;
   left: 0;
   width: 0;
-  background: #9B1B30;
-  animation: loaderFill .9s var(--ease-out) .3s forwards;
+  background: linear-gradient(to right, #6E1124, #9B1B30, #C0203A);
+  animation: loaderFill 1s cubic-bezier(.16,1,.3,1) .45s forwards;
 }
 @keyframes loaderFill {
   from { width:0 }
   to   { width:100% }
 }
+/* Shimmer sweep on the bar */
+.loader-bar::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -60%;
+  width: 60%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,.18), transparent);
+  animation: loaderShimmer 1.4s ease .5s infinite;
+}
+@keyframes loaderShimmer {
+  from { left:-60% }
+  to   { left:160% }
+}
 
-/* ── Scroll progress bar at top ── */
+/* Scroll progress — GPU promoted */
 #scroll-progress {
   position: fixed;
-  top: 0;
-  left: 0;
-  height: 2px;
-  width: 0%;
+  top: 0; left: 0;
+  height: 2px; width: 0%;
   background: #9B1B30;
   z-index: 9998;
   transition: width .1s linear;
+  will-change: width;
 }
 
 /* ═══════════════════════════════════════════
    RESPONSIVE
+═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   RESPONSIVE — TABLET  ≤1024px
 ═══════════════════════════════════════════ */
 @media (max-width: 1024px) {
   :root { --rail: 32px }
@@ -2892,42 +2948,1783 @@ footer { border-top: 4px solid var(--c-gold) !important }
   .svc-head { grid-template-columns: 1fr; gap: 16px }
   .svc-sub { justify-self: start; max-width: 100% }
   .who-sub { max-width: 100% }
-  /* Nav: hide less important links before crowding */
   .nav-list li:nth-child(n+5) { display: none }
-}
-@media (max-width: 768px) {
-  :root { --gap-2xl: 88px; --rail: 20px }
-  .nav-list, .nav-cta { display: none }
-  .nav-burger { display: flex }
-  .hero-col, .hero-geo, .hero-meta { display: none }
-  #hero { height: auto; min-height: 100svh; padding-block: 120px 80px }
-  .form-row { grid-template-columns: 1fr }
-  .ft-bottom { flex-direction: column; align-items: flex-start }
-  .steps { grid-template-columns: 1fr }
-  .svc-grid { grid-template-columns: 1fr }
-  .svc { border-right: none !important }
-  .why-grid { grid-template-columns: 1fr }
-  .why-item { border-right: none !important }
-  .ind-row, .ind-row-2 { grid-template-columns: 1fr }
-  .ind-item { border-right: none !important; border-bottom: 1px solid var(--c-rule-xs) !important }
-  .ind-row-2 .ind-item:last-child { border-bottom: none !important }
-  .proj-head { flex-direction: column; align-items: flex-start; gap: 12px }
-  .hero-btns { flex-direction: column; align-items: flex-start }
-  .cta-btns { flex-direction: column; align-items: center }
+  .impact-grid { grid-template-columns: repeat(2, 1fr) }
+  .impact-item:nth-child(2) { border-right: none }
+  .impact-item:nth-child(1),
+  .impact-item:nth-child(2) { border-bottom: 1px solid var(--c-rule-s) }
   .who-grid { grid-template-columns: 1fr }
-  .impact-grid { grid-template-columns: repeat(2,1fr) }
   .ventures-grid { grid-template-columns: 1fr }
   .venture-card { border-right: none !important; border-bottom: 1px solid var(--c-rule-xs) }
   .venture-card:last-child { border-bottom: none }
   .testi-grid { grid-template-columns: 1fr }
   .testi-card { border-right: none !important; border-bottom: 1px solid var(--c-rule-xs) }
   .testi-card:last-child { border-bottom: none }
-  .ft-top { grid-template-columns: 1fr }
 }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — MOBILE  ≤768px
+═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  :root {
+    --gap-2xl: 80px;
+    --gap-xl:  60px;
+    --gap-lg:  48px;
+    --rail: 20px;
+    font-size: 16px; /* slightly tighter base for small screens */
+  }
+
+  /* ── Navigation ── */
+  .nav-list, .nav-cta { display: none }
+  .nav-burger { display: flex }
+  /* Make burger tap target bigger — 44×44 minimum */
+  .nav-burger {
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    gap: 5px;
+    flex-direction: column;
+  }
+  .nav-burger span { width: 24px }
+
+  /* ── Drawer ── */
+  .drawer {
+    padding: 0 var(--rail);
+    gap: 0;
+    justify-content: center;
+    background: var(--c-paper);
+    /* Slide in from top instead of just fading */
+    transform: translateY(-16px);
+    transition: opacity .35s ease, transform .35s cubic-bezier(.16,1,.3,1), visibility .35s ease;
+  }
+  .drawer.open { transform: translateY(0) }
+  .drawer a {
+    font-size: 1.75rem;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--c-rule-xs);
+    width: 100%;
+    text-align: left;
+    display: block;
+  }
+  .drawer a:last-child { border-bottom: none }
+  /* Close X button in drawer */
+  .drawer-close {
+    position: absolute;
+    top: 22px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--c-ash);
+    font-size: 1.4rem;
+    font-weight: 300;
+    font-family: var(--f-sans);
+    line-height: 1;
+  }
+
+  /* ── Hero ── */
+  .hero-col, .hero-geo, .hero-meta { display: none }
+  #hero {
+    height: auto;
+    min-height: 100svh;
+    padding-block: 110px 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .hero-h1 {
+    font-size: clamp(2.4rem, 9vw, 3.2rem);
+    margin-bottom: 20px;
+    max-width: 100%;
+  }
+  .hero-lead {
+    font-size: 1.05rem;
+    margin-bottom: 36px;
+    max-width: 100%;
+    line-height: 1.75;
+  }
+  .hero-trust { margin-bottom: 24px }
+  .hero-trust span { font-size: .82rem }
+  /* Full-width stacked buttons with proper tap size */
+  .hero-btns {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+  }
+  .hero-btns .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 18px 24px;
+    font-size: .75rem;
+  }
+  .hero-avail { margin-top: 28px }
+  .hero-avail span { font-size: .82rem }
+
+  /* ── Section spacing ── */
+  .section { padding-block: var(--gap-2xl) }
+
+  /* ── About ── */
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 44px;
+  }
+  .about-left { position: static }
+  .about-h2 { font-size: clamp(1.9rem, 7vw, 2.8rem); margin-block: 18px 28px }
+  .about-card { margin-bottom: 0 }
+  .stat-grid { grid-template-columns: 1fr 1fr }
+  .stat { padding: 20px 16px }
+  .stat-n { font-size: 2.1rem }
+
+  /* ── Services ── */
+  .svc-grid { grid-template-columns: 1fr }
+  .svc { border-right: none !important; padding: 28px 22px }
+  .svc h3 { font-size: 1.3rem }
+
+  /* ── Why / Differentiators ── */
+  .why-grid { grid-template-columns: 1fr }
+  .why-item { border-right: none !important; padding: 28px 22px }
+
+  /* ── Industries ── */
+  .ind-row, .ind-row-2 { grid-template-columns: 1fr }
+  .ind-item { border-right: none !important; border-bottom: 1px solid var(--c-rule-xs) !important; padding: 24px 20px }
+  .ind-row-2 .ind-item:last-child { border-bottom: none !important }
+
+  /* ── Projects ── */
+  .proj-head { flex-direction: column; align-items: flex-start; gap: 12px }
+  .proj-grid { grid-template-columns: 1fr; gap: 16px }
+  /* Always show project info on mobile — no hover needed */
+  .proj-overlay { background: rgba(14,4,6,.62) !important }
+  .proj-info { transform: none !important; opacity: 1 !important }
+  .proj-badge { display: none }
+
+  /* ── Impact stats ── */
+  .impact-grid { grid-template-columns: repeat(2,1fr) }
+
+  /* ── Who We Are ── */
+  .who-grid { grid-template-columns: 1fr; gap: 44px }
+  .who-cards { gap: 12px }
+  .who-card { padding: 24px 20px }
+
+  /* ── Process steps ── */
+  .steps { grid-template-columns: 1fr; gap: 0 }
+  .steps::before { display: none }
+  .step {
+    padding: 28px 22px;
+    border-right: none !important;
+    border-bottom: 1px solid var(--c-rule-xs);
+  }
+  .step:last-child { border-bottom: none }
+
+  /* ── Ventures ── */
+  .ventures-grid { grid-template-columns: 1fr }
+  .venture-card { border-right: none !important; border-bottom: 1px solid var(--c-rule-xs); padding: 32px 24px }
+  .venture-card:last-child { border-bottom: none }
+
+  /* ── Testimonials ── */
+  .testi-grid { grid-template-columns: 1fr }
+  .testi-card {
+    border-right: none !important;
+    border-bottom: 1px solid var(--c-rule-xs);
+    padding: 36px 24px !important;
+  }
+  .testi-card:last-child { border-bottom: none }
+  .testi-body { font-size: 1.08rem }
+
+  /* ── CTA section ── */
+  #cta { text-align: center; padding-block: var(--gap-2xl) }
+  #cta h2 { font-size: clamp(2rem, 8vw, 3rem) }
+  #cta .sub {
+    font-size: 1rem;
+    line-height: 1.72;
+    margin-bottom: 36px;
+    /* Remove <br> effect — reflows naturally */
+    max-width: 100%;
+  }
+  .cta-btns {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    max-width: 320px;
+    margin-inline: auto;
+  }
+  .cta-btns .btn { width: 100%; justify-content: center; padding: 18px 24px }
+
+  /* ── Contact ── */
+  .contact-grid { grid-template-columns: 1fr; gap: 44px }
+  .contact-h2 { font-size: clamp(1.9rem, 7vw, 2.6rem) }
+  .contact-body { font-size: 1rem; margin-bottom: 32px }
+  /* Bigger touch targets for contact info rows */
+  .ci { padding: 6px 0 }
+  .ci-icon { width: 40px; height: 40px; flex-shrink: 0 }
+  .ci-val { font-size: 1rem }
+  /* Form improvements */
+  .form-row { grid-template-columns: 1fr }
+  .fi, .fs, .ft {
+    font-size: 1rem; /* prevents iOS zoom-on-focus (needs ≥16px) */
+    padding: 15px 16px;
+  }
+  .ft { min-height: 110px }
+  .f-submit .btn { padding: 18px 24px; font-size: .76rem }
+  .soft-pricing { padding: 16px 18px }
+
+  /* ── Footer ── */
+  footer { padding-block: 60px 32px }
+  .ft-top {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    margin-bottom: 40px;
+    padding-bottom: 40px;
+  }
+  .ft-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .ft-legal { flex-wrap: wrap; gap: 14px }
+  .ft-tag { max-width: 100% }
+  /* Bigger tap targets for footer links */
+  .ft-list a { padding: 4px 0; display: inline-block }
+  .soc { width: 40px; height: 40px }
+
+  /* ── Global: disable hover-only effects on touch ── */
+  @media (hover: none) {
+    .btn-dark:hover::after { transform: scaleX(0) }
+    .btn-ghost:hover { background: transparent; color: var(--c-gold) }
+    .svc:hover { transform: none; box-shadow: none }
+    .why-item:hover { transform: none }
+    .venture-card:hover { transform: none; box-shadow: none }
+    .testi-card:hover { transform: none }
+    .ind-item:hover { padding-left: 28px }
+  }
+
+  /* ── Reduce motion on mobile ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important }
+  }
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — SMALL MOBILE  ≤480px
+═══════════════════════════════════════════ */
 @media (max-width: 480px) {
+  :root { --rail: 16px }
+  .hero-h1 { font-size: clamp(2.1rem, 10vw, 2.8rem) }
+  .about-h2, .why-h2, .svc-h2, .contact-h2 { font-size: clamp(1.75rem, 8.5vw, 2.4rem) }
   .impact-grid { grid-template-columns: 1fr }
   .impact-item { border-right: none; border-bottom: 1px solid var(--c-rule-s) }
   .impact-item:last-child { border-bottom: none }
+  .impact-num { font-size: clamp(2.8rem, 12vw, 4rem) }
+  /* Stat grid: 2-col still works at 480 if tight */
+  .stat { padding: 16px 12px }
+  .stat-n { font-size: 1.9rem }
+  /* Loader tagline hidden — too cramped */
+  .loader-tagline { display: none }
+  /* Strip: show just 2 items */
+  .strip-item:nth-child(n+3) { display: none }
+  .strip-item { padding: 4px 14px }
+  /* Who cards full column */
+  .who-card { padding: 20px 16px }
+  /* Testi large padding fix */
+  .testi-card { padding: 28px 18px !important }
+  .testi-body { font-size: 1rem }
+  /* Footer copy smaller */
+  .ft-copy { font-size: .8rem }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MANVORA — ULTRA PREMIUM ANIMATION SYSTEM
+   Rolls-Royce Red · 3D · Classical · Cinematic
+═══════════════════════════════════════════════════════════ */
+
+:root {
+  --rr-glow-sm:  0 0 18px rgba(155,27,48,.22), 0 0 40px rgba(155,27,48,.10);
+  --rr-glow-md:  0 0 30px rgba(155,27,48,.28), 0 0 70px rgba(155,27,48,.12);
+  --rr-glow-lg:  0 0 50px rgba(155,27,48,.35), 0 0 110px rgba(155,27,48,.15);
+  --rr-red:      #9B1B30;
+  --rr-red-hi:   #C0203A;
+  --rr-red-deep: #6E1124;
+}
+
+/* Particle canvas */
+#rr-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Custom cursor */
+body { cursor: none }
+@media (pointer:coarse) { body { cursor: auto } }
+
+  box-shadow: 0 1px 0 rgba(155,27,48,.18), 0 4px 24px rgba(0,0,0,.06);
+  animation: navSettle .55s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes navSettle {
+  from { transform:translateY(-4px); opacity:.9 }
+  to   { transform:translateY(0);    opacity:1  }
+}
+
+/* Hero red edge accent */
+#hero::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 10%; bottom: 10%;
+  width: 3px;
+  background: linear-gradient(to bottom, transparent, var(--rr-red) 30%, var(--rr-red) 70%, transparent);
+  opacity: 0;
+  animation: heroEdge 1.4s cubic-bezier(.16,1,.3,1) 1.3s both;
+  z-index: 3;
+  pointer-events: none;
+}
+@keyframes heroEdge {
+  from { opacity:0; transform:scaleY(0); transform-origin:center }
+  to   { opacity:.7; transform:scaleY(1) }
+}
+
+/* Eyebrow underline draw */
+.hero-pre.eyebrow::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -6px;
+  width: 0; height: 1px;
+  background: linear-gradient(to right, var(--rr-red), transparent);
+  animation: eyebrowLine 1s cubic-bezier(.16,1,.3,1) 1.6s both;
+}
+@keyframes eyebrowLine { to { width:100% } }
+
+/* Hero h1 — letter-spacing breath */
+.js-ready .hero-h1 {
+  animation: heroH1Breath 1.1s cubic-bezier(.16,1,.3,1) .25s both;
+}
+@keyframes heroH1Breath {
+  from { opacity:0; transform:translateY(32px); letter-spacing:.06em }
+  to   { opacity:1; transform:translateY(0);    letter-spacing:-.01em }
+}
+
+/* Hero words — 3D flip in */
+.hero-word {
+  display: inline-block;
+  opacity: 0;
+  transform-origin: 50% 100%;
+  animation: wordFlip3D .8s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes wordFlip3D {
+  from { opacity:0; transform:perspective(400px) rotateX(28deg) translateY(22px); filter:blur(2px) }
+  to   { opacity:1; transform:perspective(400px) rotateX(0deg)  translateY(0);    filter:blur(0)   }
+}
+
+/* Hero em glow */
+.hero-h1 em {
+  position: relative;
+  display: inline-block;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-h1 em::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--rr-red);
+    opacity: 0;
+    animation: emGlow 3s ease-in-out 2.2s infinite alternate;
+    pointer-events: none;
+  }
+}
+@keyframes emGlow {
+  from { opacity:0 }
+  to   { opacity:.12 }
+}
+
+/* Geo float + rotate keyframes */
+@keyframes floatGeoRich {
+  0%,100% { transform:translate(50%,-50%) translateY(0)    rotate(0deg)   }
+  33%     { transform:translate(50%,-50%) translateY(-10px) rotate(1.5deg) }
+  66%     { transform:translate(50%,-50%) translateY(6px)  rotate(-1deg)  }
+}
+
+/* Section heading red underline draw-on-reveal */
+.about-h2, .svc-h2, .proj-h2, .why-h2, .testi-h2 { position:relative }
+.about-h2::after, .svc-h2::after, .proj-h2::after,
+.why-h2::after,  .testi-h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px; left: 0;
+  width: 0; height: 2px;
+  background: linear-gradient(to right, var(--rr-red), var(--rr-red-hi), transparent);
+  transition: width 1.2s cubic-bezier(.16,1,.3,1) .4s;
+}
+.reveal.in .about-h2::after,
+.reveal.in .svc-h2::after,
+.reveal.in .proj-h2::after,
+.reveal.in .why-h2::after,
+.reveal.in .testi-h2::after { width:80px }
+
+/* Service cards — 3D tilt */
+.svc {
+  transition: background var(--dur), transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s;
+  transform-style: preserve-3d;
+}
+.svc:hover {
+  transform: translateY(-5px) perspective(800px) rotateX(2deg);
+  box-shadow: 0 12px 40px rgba(155,27,48,.10), inset 0 1px 0 rgba(155,27,48,.12);
+}
+.svc-idx {
+  display: block;
+  font-family: var(--f-serif);
+  font-size: 2.2rem;
+  font-weight: 300;
+  color: var(--rr-red);
+  opacity: .18;
+  line-height: 1;
+  margin-bottom: 14px;
+  transition: opacity .4s, transform .4s, text-shadow .4s;
+}
+.svc:hover .svc-idx { opacity:.9; transform:translateX(4px); text-shadow:var(--rr-glow-sm) }
+.svc:hover h3 { color:var(--rr-red) }
+
+/* Impact items */
+.impact-item {
+  transition: background .4s, transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s;
+}
+.impact-item:hover {
+  background: rgba(155,27,48,.03);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(155,27,48,.08);
+}
+.impact-num { transition: text-shadow .4s }
+.impact-item:hover .impact-num { text-shadow: var(--rr-glow-md) }
+
+/* Stat hover */
+.stat { transition: background .3s, transform .35s cubic-bezier(.16,1,.3,1) }
+.stat:hover { background:rgba(155,27,48,.025); transform:scale(1.02) }
+.stat-n { transition: text-shadow .4s }
+.stat:hover .stat-n { text-shadow: var(--rr-glow-sm) }
+
+/* Venture cards — 3D lift + top bar */
+.venture-card {
+  transition: background var(--dur), transform .45s cubic-bezier(.16,1,.3,1), box-shadow .45s;
+  transform-style: preserve-3d;
+  position: relative; overflow: hidden;
+}
+.venture-card::before {
+  content: '';
+  position: absolute;
+  top:0; left:0; right:0; height:2px;
+  background: linear-gradient(to right, transparent, var(--rr-red), transparent);
+  transform: scaleX(0);
+  transition: transform .6s cubic-bezier(.16,1,.3,1);
+}
+.venture-card:hover::before { transform:scaleX(1) }
+.venture-card:hover {
+  transform: translateY(-6px) perspective(900px) rotateX(1.5deg);
+  box-shadow: var(--rr-glow-sm), 0 16px 50px rgba(0,0,0,.07);
+}
+
+/* Testimonial cards — 3D + bottom bar */
+.testi-card {
+  transition: background var(--dur), transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s;
+  transform-style: preserve-3d;
+  position: relative; overflow: hidden;
+}
+.testi-card::after {
+  content: '';
+  position: absolute;
+  bottom:0; left:0; right:0; height:2px;
+  background: linear-gradient(to right, transparent, var(--rr-red) 50%, transparent);
+  transform: scaleX(0);
+  transition: transform .7s cubic-bezier(.16,1,.3,1);
+}
+.testi-card:hover::after { transform:scaleX(1) }
+.testi-card:hover {
+  transform: translateY(-4px) perspective(800px) rotateX(1deg);
+  box-shadow: 0 12px 40px rgba(155,27,48,.08);
+}
+.testi-quote-mark { transition: opacity .4s, transform .4s }
+.testi-card:hover .testi-quote-mark { opacity:.9 !important; transform:scale(1.1) translateX(-2px) }
+
+/* Who cards — left red slide */
+.who-card {
+  transition: background .35s, transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s;
+  position: relative; overflow: hidden;
+}
+.who-card::before {
+  content: '';
+  position: absolute;
+  left:0; top:0; bottom:0; width:0;
+  background: linear-gradient(to bottom, var(--rr-red), var(--rr-red-deep));
+  transition: width .4s cubic-bezier(.16,1,.3,1);
+}
+.who-card:hover::before { width:3px }
+.who-card:hover {
+  transform: translateX(6px);
+  box-shadow: -4px 0 0 var(--rr-red), 0 8px 32px rgba(155,27,48,.07);
+}
+.who-card-num { transition: text-shadow .4s, transform .4s }
+.who-card:hover .who-card-num { text-shadow:var(--rr-glow-sm); transform:scale(1.08) }
+
+/* Process steps */
+.step {
+  position: relative; overflow: hidden;
+  transition: background .35s, transform .4s cubic-bezier(.16,1,.3,1);
+}
+.step::after {
+  content: '';
+  position: absolute; inset:0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(155,27,48,.08) 0%, transparent 70%);
+  opacity:0; transition: opacity .5s;
+}
+.step:hover::after { opacity:1 }
+.step:hover { transform:translateY(-4px) }
+.step-n { transition: text-shadow .4s, letter-spacing .4s }
+.step:hover .step-n { text-shadow:var(--rr-glow-sm); letter-spacing:.06em }
+.step-dot { transition: box-shadow .4s, transform .4s }
+.step:hover .step-dot {
+  box-shadow: 0 0 0 6px rgba(155,27,48,.15), 0 0 0 12px rgba(155,27,48,.06);
+  transform: scale(1.2);
+}
+
+/* Industry items */
+.ind-item { position:relative; overflow:hidden }
+.ind-item::before {
+  content: '';
+  position: absolute;
+  left:0; top:0; bottom:0; width:0;
+  background: linear-gradient(to bottom, var(--rr-red), var(--rr-red-deep));
+  transition: width .35s cubic-bezier(.16,1,.3,1);
+}
+.ind-item:hover::before { width:3px }
+.ind-item:hover { background:rgba(155,27,48,.022); padding-left:40px }
+.ind-item:hover h3 { color:var(--rr-red) }
+.ind-item:hover .ind-icon svg { stroke:var(--rr-red); filter:drop-shadow(0 0 4px rgba(155,27,48,.4)) }
+
+/* Gold rule shimmer */
+.gold-rule { position:relative; overflow:hidden }
+@media (prefers-reduced-motion: no-preference) {
+  .gold-rule::after {
+    content: '';
+    position: absolute;
+    top:0; bottom:0; left:-30%; width:30%;
+    background: linear-gradient(to right, transparent, rgba(155,27,48,.6), transparent);
+    animation: ruleShimmer 4s ease-in-out infinite;
+    will-change: left;
+  }
+}
+@keyframes ruleShimmer {
+  0%   { left:-30% }
+  100% { left:130% }
+}
+
+/* Buttons — 3D press */
+.btn-dark {
+  box-shadow: 0 2px 0 var(--rr-red-deep), 0 4px 16px rgba(155,27,48,.2);
+  transition: transform .2s cubic-bezier(.16,1,.3,1), box-shadow .2s cubic-bezier(.16,1,.3,1), background .45s;
+}
+.btn-dark:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--rr-red-deep), var(--rr-glow-sm);
+}
+.btn-dark:active { transform:translateY(1px); box-shadow:0 1px 0 var(--rr-red-deep) }
+
+.btn-ghost {
+  position: relative; overflow:hidden;
+  transition: all .35s cubic-bezier(.16,1,.3,1);
+}
+.btn-ghost::before {
+  content: '';
+  position: absolute; inset:0;
+  background: var(--rr-red);
+  transform: scaleX(0); transform-origin:right;
+  transition: transform .45s cubic-bezier(.16,1,.3,1);
+  z-index: 0;
+}
+.btn-ghost:hover::before { transform:scaleX(1); transform-origin:left }
+.btn-ghost:hover { color:#fff; border-color:var(--rr-red) }
+
+/* Scroll progress bar */
+#scroll-progress {
+  background: linear-gradient(to right, var(--rr-red-deep), var(--rr-red), var(--rr-red-hi)) !important;
+  height: 3px !important;
+  box-shadow: 0 0 10px rgba(155,27,48,.5);
+}
+
+/* Cursor glow upgrade */
+#cursor-glow {
+  background: radial-gradient(circle,
+    rgba(155,27,48,.09) 0%,
+    rgba(155,27,48,.04) 40%,
+    transparent 70%) !important;
+  width: 500px !important; height: 500px !important;
+}
+
+/* Strip items hover */
+.strip-item { position:relative; transition:color .3s, transform .3s }
+.strip-item:hover { color:var(--rr-red) !important; transform:translateY(-2px) }
+.strip-item::after {
+  content:'';
+  position:absolute; bottom:-2px; left:50%; right:50%;
+  height:1px; background:var(--rr-red);
+  transition: left .3s cubic-bezier(.16,1,.3,1), right .3s cubic-bezier(.16,1,.3,1);
+}
+.strip-item:hover::after { left:16px; right:16px }
+
+/* Footer top glow */
+footer { position:relative }
+@media (prefers-reduced-motion: no-preference) {
+  footer::before {
+    content:'';
+    position:absolute; top:0; left:10%; right:10%; height:1px;
+    background: linear-gradient(to right, transparent, var(--rr-red) 30%, var(--rr-red) 70%, transparent);
+    animation: footerGlow 3s ease-in-out infinite alternate;
+  }
+}
+@keyframes footerGlow {
+  from { opacity:.4 }
+  to   { opacity:1; filter:blur(2px) }
+}
+.soc { transition: all .35s cubic-bezier(.16,1,.3,1) }
+.soc:hover { background:var(--rr-red) !important; border-color:var(--rr-red) !important; box-shadow:var(--rr-glow-sm); transform:translateY(-2px) }
+
+/* Page loader red bg */
+#page-loader { background:radial-gradient(ellipse at 50% 60%, #1a0509 0%, #0C0A09 70%) }
+.loader-logo svg { filter:drop-shadow(0 0 12px rgba(155,27,48,.5)) }
+
+/* Form focus glow */
+.fi:focus, .fs:focus, .ft:focus {
+  border-color: var(--rr-red) !important;
+  box-shadow: 0 0 0 3px rgba(155,27,48,.10), 0 0 20px rgba(155,27,48,.08) !important;
+  transform: translateY(-1px);
+}
+
+/* CI contact item slide */
+.ci { transition: transform .3s cubic-bezier(.16,1,.3,1) }
+.ci:hover { transform:translateX(6px) }
+.ci:hover .ci-icon { border-color:var(--rr-red) !important; box-shadow:var(--rr-glow-sm) }
+
+/* Why items glow bg */
+.why-item { position:relative; overflow:hidden }
+.why-item::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:0;
+  background: linear-gradient(to top, rgba(155,27,48,.04), transparent);
+  transition: height .4s cubic-bezier(.16,1,.3,1);
+}
+.why-item:hover::after { height:100% }
+.why-bar { transition: width .4s cubic-bezier(.16,1,.3,1), box-shadow .4s }
+.why-item:hover .why-bar { width:56px !important; box-shadow:var(--rr-glow-sm) }
+
+/* About card top glow */
+.about-card { position:relative; overflow:hidden }
+@media (prefers-reduced-motion: no-preference) {
+  .about-card::before {
+    content:'';
+    position:absolute; top:0; left:10%; right:10%; height:3px;
+    background: linear-gradient(to right, transparent, var(--rr-red), transparent);
+    animation: aboutCardGlow 3s ease-in-out infinite alternate;
+  }
+}
+@keyframes aboutCardGlow {
+  from { opacity:.5 }
+  to   { opacity:1; filter:blur(1px) }
+}
+
+/* Eyebrow line glow */
+.eyebrow::before {
+  background: linear-gradient(to right, var(--rr-red), var(--rr-red-hi)) !important;
+  box-shadow: 0 0 6px rgba(155,27,48,.4);
+}
+
+/* Proj card red border reveal */
+.proj { position:relative }
+.proj::after {
+  content:''; position:absolute; inset:0;
+  border:1px solid rgba(155,27,48,0);
+  transition: border-color .4s; pointer-events:none; z-index:5;
+}
+.proj:hover::after { border-color:rgba(155,27,48,.25); box-shadow:inset 0 0 40px rgba(155,27,48,.05) }
+.proj-tag { transition: letter-spacing .3s }
+.proj:hover .proj-tag { letter-spacing:.22em }
+
+/* Impact section radial pulse */
+#impact { position:relative }
+@media (prefers-reduced-motion: no-preference) {
+  #impact::before {
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(ellipse at 50% 50%, rgba(155,27,48,.04) 0%, transparent 70%);
+    animation: impactPulse 4s ease-in-out infinite alternate;
+    pointer-events:none;
+  }
+}
+@keyframes impactPulse {
+  from { opacity:.5; transform:scale(.96) }
+  to   { opacity:1;  transform:scale(1.02) }
+}
+
+/* Nav CTA ring pulse */
+.nav-cta { position:relative }
+.nav-cta::after {
+  content:''; position:absolute; inset:-3px;
+  border:1px solid rgba(155,27,48,.35); opacity:0; transition:opacity .3s;
+}
+.nav-cta:hover::after { opacity:1; animation:ctaRing .6s ease both }
+@keyframes ctaRing {
+  from { inset:0; opacity:.8 }
+  to   { inset:-6px; opacity:0 }
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   SERVICE FLIP CARDS
+═══════════════════════════════════════════════════════ */
+.svc-flip {
+  perspective: 1000px;
+  cursor: pointer;
+  padding: 0 !important;
+  background: transparent !important;
+  overflow: visible !important;
+  height: 320px;
+}
+.svc-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .75s cubic-bezier(.16,1,.3,1);
+  transform-origin: center center;
+  will-change: transform;
+}
+.svc-flip.flipped .svc-inner { transform: rotateY(180deg) }
+.svc-front, .svc-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  padding: 38px 32px;
+  display: flex;
+  flex-direction: column;
+}
+.svc-front {
+  background: var(--c-ivory);
+  border: 1px solid var(--c-rule-xs);
+  justify-content: flex-start;
+}
+.svc-back {
+  background: #0C0A09;
+  border: 1px solid rgba(155,27,48,.35);
+  transform: rotateY(180deg);
+  justify-content: space-between;
+  border-top: 3px solid var(--rr-red);
+}
+/* Front hover lift */
+.svc-flip:hover .svc-front {
+  border-color: rgba(155,27,48,.3);
+  box-shadow: 0 8px 32px rgba(155,27,48,.08);
+}
+/* Front content */
+.svc-front .svc-idx {
+  font-family: var(--f-serif);
+  font-size: 2rem;
+  color: var(--rr-red);
+  opacity: .2;
+  margin-bottom: 10px;
+  transition: opacity .35s, transform .35s;
+}
+.svc-flip:hover .svc-front .svc-idx { opacity: .9; transform: translateX(4px) }
+.svc-front h3 {
+  font-family: var(--f-serif);
+  font-size: 1.28rem;
+  font-weight: 500;
+  color: var(--c-ink);
+  margin-bottom: 12px;
+  line-height: 1.28;
+}
+.svc-front p {
+  font-family: var(--f-serif);
+  font-size: .98rem;
+  color: var(--c-ash);
+  line-height: 1.8;
+  flex: 1;
+}
+.svc-flip-hint {
+  margin-top: 18px;
+  font-size: .68rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--rr-red);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .35s, transform .35s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.svc-flip-hint span { transition: transform .3s }
+.svc-flip:hover .svc-flip-hint { opacity: 1; transform: translateY(0) }
+.svc-flip:hover .svc-flip-hint span { transform: translateX(4px) }
+/* Back content */
+.svc-back-num {
+  font-family: var(--f-serif);
+  font-size: 3.2rem;
+  font-weight: 300;
+  color: rgba(155,27,48,.2);
+  line-height: 1;
+  position: absolute;
+  top: 16px; right: 24px;
+}
+.svc-back h4 {
+  font-family: var(--f-serif);
+  font-size: 1.22rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.9);
+  margin-bottom: 16px;
+  letter-spacing: .02em;
+}
+.svc-back-list {
+  list-style: none;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+.svc-back-list li {
+  font-size: .82rem;
+  color: rgba(255,255,255,.55);
+  letter-spacing: .03em;
+  line-height: 1.5;
+}
+.svc-back-list li::first-letter { color: var(--rr-red) }
+.svc-price-btn {
+  width: 100%;
+  padding: 13px 20px;
+  background: var(--rr-red);
+  color: #fff;
+  font-family: var(--f-sans);
+  font-size: .72rem;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background .3s, box-shadow .3s, transform .2s;
+  z-index: 1;
+}
+.svc-price-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--rr-red-deep);
+  transform: scaleX(0); transform-origin: right;
+  transition: transform .4s cubic-bezier(.16,1,.3,1);
+  z-index: 0;
+}
+.svc-price-btn:hover::before { transform: scaleX(1); transform-origin: left }
+.svc-price-btn:hover { box-shadow: 0 4px 20px rgba(155,27,48,.4); transform: translateY(-1px) }
+.svc-price-btn span, .svc-price-btn { position: relative; z-index: 1 }
+
+/* Mobile flip cards */
+@media (max-width: 768px) {
+  .svc-flip { height: 300px }
+  .svc-front, .svc-back { padding: 26px 22px }
+  .svc-back-num { font-size: 2.4rem }
+}
+@media (max-width: 480px) {
+  .svc-flip { height: auto; min-height: 260px }
+  .svc-inner { transition: transform .6s cubic-bezier(.16,1,.3,1) }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PRICING OVERLAY
+═══════════════════════════════════════════════════════ */
+#pricing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(12,10,9,.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .5s cubic-bezier(.16,1,.3,1), visibility .5s;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+#pricing-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+#pricing-page {
+  background: var(--c-paper);
+  min-height: auto;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 56px 100px;
+  position: relative;
+  transform: translateY(32px);
+  transition: transform .55s cubic-bezier(.16,1,.3,1);
+  border-inline: 1px solid var(--c-rule-xs);
+}
+#pricing-overlay.open #pricing-page { transform: translateY(0) }
+
+/* Close button */
+#pricing-close {
+  position: sticky;
+  top: 20px;
+  float: right;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--f-sans);
+  font-size: .7rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--c-ash);
+  background: var(--c-ivory);
+  border: 1px solid var(--c-rule);
+  padding: 10px 18px;
+  cursor: pointer;
+  z-index: 10;
+  transition: all .3s;
+}
+#pricing-close:hover { background: var(--c-ink); color: #fff; border-color: var(--c-ink) }
+
+/* Header */
+#pricing-header { margin-bottom: 52px; padding-top: 8px }
+#pricing-header h1 {
+  font-family: var(--f-serif);
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  font-weight: 300;
+  color: var(--c-ink);
+  line-height: 1.08;
+  margin-block: 18px 18px;
+}
+#pricing-header h1 em { font-style: italic; color: var(--rr-red) }
+#pricing-header p {
+  font-family: var(--f-serif);
+  font-size: 1.1rem;
+  color: var(--c-ash);
+  line-height: 1.85;
+  max-width: 640px;
+}
+
+/* Legend */
+#pricing-legend {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 44px;
+  padding: 16px 22px;
+  background: var(--c-ivory);
+  border: 1px solid var(--c-rule-xs);
+  flex-wrap: wrap;
+}
+.pl-item { display: flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--c-ash); letter-spacing: .06em }
+.pl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0 }
+.pl-yes { background: var(--rr-red) }
+.pl-add { background: #C07830 }
+.pl-no  { background: var(--c-ash-lt); opacity: .4 }
+
+/* Plans grid */
+#pricing-plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid var(--c-rule);
+  margin-bottom: 72px;
+}
+.plan-card {
+  padding: 40px 32px;
+  border-right: 1px solid var(--c-rule);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-paper);
+  transition: background .3s;
+}
+.plan-card:last-child { border-right: none }
+.plan-card.plan-featured {
+  background: #0C0A09;
+  border-top: 3px solid var(--rr-red);
+  transform: translateY(-1px);
+  box-shadow: 0 0 60px rgba(155,27,48,.12);
+}
+.plan-badge {
+  position: absolute;
+  top: -1px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--rr-red);
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 500;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  padding: 4px 14px;
+  white-space: nowrap;
+}
+.plan-tier {
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--rr-red);
+  margin-bottom: 10px;
+}
+.plan-card.plan-featured .plan-tier { color: rgba(155,27,48,.8) }
+.plan-name {
+  font-family: var(--f-serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--c-ink);
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+.plan-card.plan-featured .plan-name { color: rgba(255,255,255,.92) }
+.plan-tagline {
+  font-size: .84rem;
+  color: var(--c-ash);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.plan-card.plan-featured .plan-tagline { color: rgba(255,255,255,.45) }
+.plan-price {
+  margin-bottom: 8px;
+}
+.plan-price-amount {
+  font-family: var(--f-serif);
+  font-size: 2.8rem;
+  font-weight: 300;
+  color: var(--c-ink);
+  line-height: 1;
+}
+.plan-card.plan-featured .plan-price-amount { color: #fff }
+.plan-price-currency {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--rr-red);
+  vertical-align: super;
+  font-family: var(--f-sans);
+  margin-right: 2px;
+}
+.plan-price-note {
+  font-size: .72rem;
+  color: var(--c-ash-lt);
+  margin-bottom: 24px;
+  letter-spacing: .04em;
+}
+.plan-card.plan-featured .plan-price-note { color: rgba(255,255,255,.3) }
+.plan-divider {
+  width: 100%; height: 1px;
+  background: var(--c-rule-xs);
+  margin-bottom: 22px;
+}
+.plan-card.plan-featured .plan-divider { background: rgba(255,255,255,.08) }
+.plan-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  margin-bottom: 28px;
+}
+.plan-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: .86rem;
+  line-height: 1.55;
+  color: var(--c-ash);
+}
+.plan-card.plan-featured .plan-features li { color: rgba(255,255,255,.6) }
+.pf-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.pf-yes  { background: var(--rr-red) }
+.pf-add  { background: #C07830 }
+.pf-no   { background: #ccc; opacity: .4 }
+.plan-cta {
+  width: 100%;
+  padding: 14px 20px;
+  font-family: var(--f-sans);
+  font-size: .72rem;
+  font-weight: 500;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  transition: all .3s;
+  border: 1.5px solid var(--c-rule);
+  background: transparent;
+  color: var(--c-ink);
+}
+.plan-cta:hover { background: var(--c-ink); color: #fff; border-color: var(--c-ink) }
+.plan-card.plan-featured .plan-cta {
+  background: var(--rr-red);
+  border-color: var(--rr-red);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(155,27,48,.35);
+}
+.plan-card.plan-featured .plan-cta:hover {
+  background: var(--rr-red-deep);
+  border-color: var(--rr-red-deep);
+  box-shadow: 0 6px 28px rgba(155,27,48,.45);
+}
+
+/* Infrastructure breakdown */
+#pricing-infra {
+  margin-bottom: 60px;
+  padding: 44px 40px;
+  background: var(--c-ivory);
+  border: 1px solid var(--c-rule-xs);
+  border-left: 3px solid var(--rr-red);
+}
+.infra-head { margin-bottom: 36px }
+.infra-head h3 {
+  font-family: var(--f-serif);
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: var(--c-ink);
+  margin-block: 14px 12px;
+  line-height: 1.15;
+}
+.infra-head h3 em { font-style: italic; color: var(--rr-red) }
+.infra-head p { font-family: var(--f-serif); font-size: 1rem; color: var(--c-ash); line-height: 1.8 }
+#infra-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--c-rule-xs);
+  border: 1px solid var(--c-rule-xs);
+}
+.infra-item {
+  background: var(--c-paper);
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.infra-cat {
+  font-size: .64rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--rr-red);
+  margin-bottom: 4px;
+}
+.infra-name { font-family: var(--f-serif); font-size: 1rem; font-weight: 500; color: var(--c-ink) }
+.infra-provider { font-size: .78rem; color: var(--c-ash-lt) }
+.infra-price {
+  font-family: var(--f-serif);
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--rr-red);
+  margin-top: 6px;
+}
+.infra-note { font-size: .72rem; color: var(--c-ash-lt); line-height: 1.4; margin-top: 2px }
+
+/* FAQ */
+#pricing-faq { margin-bottom: 56px }
+#pricing-faq h3 {
+  font-family: var(--f-serif);
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: var(--c-ink);
+  margin-bottom: 28px;
+  line-height: 1.15;
+}
+#pricing-faq h3 em { font-style: italic; color: var(--rr-red) }
+.faq-item {
+  border-top: 1px solid var(--c-rule-xs);
+  overflow: hidden;
+}
+.faq-item:last-child { border-bottom: 1px solid var(--c-rule-xs) }
+.faq-q {
+  width: 100%;
+  text-align: left;
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--f-serif);
+  font-size: 1.08rem;
+  font-weight: 400;
+  color: var(--c-ink);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color .3s;
+}
+.faq-q:hover { color: var(--rr-red) }
+.faq-icon {
+  width: 20px; height: 20px;
+  border: 1px solid var(--c-rule);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: .9rem;
+  color: var(--c-ash);
+  transition: all .3s;
+}
+.faq-item.open .faq-icon { background: var(--rr-red); border-color: var(--rr-red); color: #fff; transform: rotate(45deg) }
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .45s cubic-bezier(.16,1,.3,1), padding .45s;
+  padding: 0;
+}
+.faq-item.open .faq-a { max-height: 300px; padding-bottom: 20px }
+.faq-a p {
+  font-family: var(--f-serif);
+  font-size: 1rem;
+  color: var(--c-ash);
+  line-height: 1.85;
+}
+
+/* Pricing CTA */
+#pricing-cta {
+  text-align: center;
+  padding: 48px 40px;
+  background: var(--c-ivory);
+  border: 1px solid var(--c-rule-xs);
+}
+#pricing-cta p {
+  font-family: var(--f-serif);
+  font-size: 1.12rem;
+  color: var(--c-ash);
+  line-height: 1.85;
+  max-width: 560px;
+  margin: 0 auto 28px;
+}
+
+/* Mobile pricing overlay */
+@media (max-width: 768px) {
+  #pricing-page { padding: 44px 20px 80px }
+  #pricing-plans { grid-template-columns: 1fr }
+  .plan-card { border-right: none; border-bottom: 1px solid var(--c-rule) }
+  .plan-card:last-child { border-bottom: none }
+  .plan-card.plan-featured { transform: none; border-top: 3px solid var(--rr-red) }
+  #infra-grid { grid-template-columns: 1fr 1fr }
+  #pricing-infra { padding: 28px 20px }
+  #pricing-close { position: fixed; top: 16px; right: 16px; float: none; z-index: 100 }
+}
+@media (max-width: 480px) {
+  #infra-grid { grid-template-columns: 1fr }
+}
+
+
+/* ═══════════════════════════════════════════════════
+   PROJECT DETAIL MODAL
+═══════════════════════════════════════════════════ */
+#proj-modal, #venture-modal {
+  position: fixed; inset: 0;
+  z-index: 10001;
+  background: rgba(12,10,9,.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0; visibility: hidden;
+  transition: opacity .45s cubic-bezier(.16,1,.3,1), visibility .45s;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+#proj-modal.open, #venture-modal.open {
+  opacity: 1; visibility: visible;
+}
+#proj-modal-page, #venture-modal-page {
+  background: var(--c-paper);
+  max-width: 860px;
+  margin: 40px auto;
+  padding: 0 0 72px;
+  position: relative;
+  transform: translateY(28px) scale(.98);
+  transition: transform .5s cubic-bezier(.16,1,.3,1);
+  border-top: 3px solid var(--rr-red);
+  box-shadow: 0 40px 120px rgba(0,0,0,.3), 0 0 0 1px rgba(155,27,48,.15);
+}
+#proj-modal.open #proj-modal-page,
+#venture-modal.open #venture-modal-page {
+  transform: translateY(0) scale(1);
+}
+#proj-modal-close, #venture-modal-close {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 8px;
+  float: right; margin: 16px 20px 0 0;
+  font-family: var(--f-sans); font-size: .68rem;
+  font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--c-ash); background: var(--c-ivory);
+  border: 1px solid var(--c-rule); padding: 9px 16px;
+  cursor: pointer; transition: all .25s;
+}
+#proj-modal-close:hover, #venture-modal-close:hover {
+  background: var(--c-ink); color: #fff; border-color: var(--c-ink);
+}
+
+/* Project modal body */
+.pm-hero {
+  width: 100%; aspect-ratio: 16/7;
+  background: #F0EBE8;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  margin-bottom: 0;
+}
+.pm-hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #1a0509 0%, #2d0a10 50%, #0C0A09 100%);
+}
+.pm-hero-label {
+  position: relative; z-index: 2;
+  text-align: center;
+}
+.pm-hero-tag {
+  font-size: .65rem; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--rr-red); margin-bottom: 10px;
+}
+.pm-hero-title {
+  font-family: var(--f-serif); font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 300; color: rgba(255,255,255,.92); line-height: 1.1;
+}
+.pm-hero-title em { font-style: italic; color: var(--rr-red) }
+.pm-body { padding: 44px 52px 0; }
+.pm-meta-row {
+  display: flex; gap: 32px; flex-wrap: wrap;
+  margin-bottom: 36px; padding-bottom: 28px;
+  border-bottom: 1px solid var(--c-rule-xs);
+}
+.pm-meta { display: flex; flex-direction: column; gap: 4px }
+.pm-meta-label {
+  font-size: .62rem; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rr-red);
+}
+.pm-meta-val {
+  font-family: var(--f-serif); font-size: 1rem; color: var(--c-slate);
+}
+.pm-section-title {
+  font-family: var(--f-serif); font-size: 1.3rem; font-weight: 500;
+  color: var(--c-ink); margin-bottom: 14px; margin-top: 32px;
+}
+.pm-body p {
+  font-family: var(--f-serif); font-size: 1.05rem; color: var(--c-ash);
+  line-height: 1.88; margin-bottom: 16px;
+}
+.pm-results {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--c-rule-xs);
+  border: 1px solid var(--c-rule-xs); margin: 28px 0;
+}
+.pm-result {
+  background: var(--c-ivory); padding: 22px 18px;
+}
+.pm-result-num {
+  font-family: var(--f-serif); font-size: 2.2rem; font-weight: 300;
+  color: var(--rr-red); line-height: 1; margin-bottom: 6px;
+}
+.pm-result-label {
+  font-size: .76rem; color: var(--c-ash-lt); letter-spacing: .06em;
+}
+.pm-tech-list {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;
+}
+.pm-tech {
+  font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--c-ash); background: var(--c-ivory);
+  border: 1px solid var(--c-rule-xs); padding: 5px 12px;
+}
+.pm-cta-row {
+  display: flex; gap: 14px; margin-top: 32px; flex-wrap: wrap;
+}
+
+/* Venture modal */
+.vm-accent {
+  height: 4px;
+  background: linear-gradient(to right, var(--rr-red), var(--rr-red-hi), transparent);
+}
+.vm-body { padding: 36px 48px 0 }
+.vm-status-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: .68rem; letter-spacing: .18em; text-transform: uppercase;
+  padding: 6px 14px; border: 1px solid var(--c-rule-xs); margin-bottom: 18px;
+}
+.vm-status-badge.live { color: #2d7a3a; border-color: rgba(45,122,58,.25); background: rgba(45,122,58,.05) }
+.vm-status-badge.building { color: var(--rr-red); border-color: rgba(155,27,48,.2); background: rgba(155,27,48,.03) }
+.vm-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite }
+.vm-name {
+  font-family: var(--f-serif); font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 300; color: var(--c-ink); line-height: 1.05; margin-bottom: 8px;
+}
+.vm-tagline {
+  font-family: var(--f-serif); font-size: 1.15rem; font-style: italic;
+  color: var(--rr-red); margin-bottom: 28px;
+}
+.vm-body p {
+  font-family: var(--f-serif); font-size: 1.08rem; color: var(--c-ash);
+  line-height: 1.9; margin-bottom: 16px;
+}
+.vm-features {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin: 28px 0;
+}
+.vm-feature {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: .9rem; color: var(--c-slate); line-height: 1.5;
+}
+.vm-feature-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--rr-red); flex-shrink: 0; margin-top: 6px;
+}
+
+@media (max-width:768px) {
+  #proj-modal-page, #venture-modal-page { margin: 0; border-radius: 0; min-height: 100vh }
+  .pm-body, .vm-body { padding: 28px 20px 0 }
+  .pm-results { grid-template-columns: 1fr 1fr }
+  .vm-features { grid-template-columns: 1fr }
+  #proj-modal-close, #venture-modal-close { position: fixed; top: 12px; right: 12px }
+}
+
+/* ═══════════════════════════════════════════════════
+   WHATSAPP FLOAT BUTTON
+═══════════════════════════════════════════════════ */
+#wa-float {
+  position: fixed; bottom: 28px; right: 28px; z-index: 9000;
+  display: flex; align-items: center; gap: 10px;
+  background: #25D366; color: #fff;
+  padding: 13px 20px 13px 16px;
+  text-decoration: none;
+  font-family: var(--f-sans); font-size: .72rem;
+  font-weight: 500; letter-spacing: .06em;
+  box-shadow: 0 4px 20px rgba(37,211,102,.35), 0 0 0 0 rgba(37,211,102,.4);
+  animation: waPulse 2.5s ease infinite;
+  transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, padding .35s;
+  overflow: hidden;
+  max-width: 220px;
+}
+#wa-float:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(37,211,102,.45);
+}
+@keyframes waPulse {
+  0%,100% { box-shadow: 0 4px 20px rgba(37,211,102,.35), 0 0 0 0 rgba(37,211,102,.3) }
+  50%      { box-shadow: 0 4px 20px rgba(37,211,102,.35), 0 0 0 10px rgba(37,211,102,0) }
+}
+#wa-icon { width: 22px; height: 22px; flex-shrink: 0 }
+#wa-label { white-space: nowrap; overflow: hidden; transition: max-width .35s, opacity .35s }
+/* Collapse to icon only on mobile */
+@media (max-width: 480px) {
+  #wa-float { padding: 14px; border-radius: 50%; bottom: 80px }
+  #wa-label { display: none }
+}
+
+/* ═══════════════════════════════════════════════════
+   BACK TO TOP BUTTON
+═══════════════════════════════════════════════════ */
+#back-top {
+  position: fixed; bottom: 28px; left: 28px; z-index: 9000;
+  width: 44px; height: 44px;
+  background: var(--c-paper); border: 1px solid var(--c-rule);
+  color: var(--c-ink); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; transform: translateY(8px);
+  transition: all .35s cubic-bezier(.16,1,.3,1);
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+#back-top.visible { opacity: 1; visibility: visible; transform: translateY(0) }
+#back-top:hover {
+  background: var(--rr-red); color: #fff;
+  border-color: var(--rr-red);
+  box-shadow: 0 4px 20px rgba(155,27,48,.3);
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════
+   COOKIE CONSENT BANNER
+═══════════════════════════════════════════════════ */
+#cookie-banner {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 9500;
+  background: var(--c-ink); border-top: 2px solid var(--rr-red);
+  padding: 16px 24px;
+  transform: translateY(100%);
+  transition: transform .5s cubic-bezier(.16,1,.3,1);
+}
+#cookie-banner.show { transform: translateY(0) }
+#cookie-inner {
+  max-width: var(--max); margin: 0 auto;
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+}
+#cookie-text {
+  flex: 1; font-size: .84rem; color: rgba(255,255,255,.65); line-height: 1.55;
+  min-width: 200px;
+}
+#cookie-text strong { color: rgba(255,255,255,.88) }
+#cookie-actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0 }
+#cookie-ok {
+  background: var(--rr-red); color: #fff; border: none;
+  padding: 9px 22px; font-family: var(--f-sans); font-size: .72rem;
+  font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  cursor: pointer; transition: background .25s;
+}
+#cookie-ok:hover { background: var(--rr-red-deep) }
+#cookie-policy {
+  font-size: .76rem; color: rgba(255,255,255,.4);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+#cookie-policy:hover { color: rgba(255,255,255,.7) }
+@media (max-width: 600px) {
+  #cookie-inner { flex-direction: column; align-items: flex-start; gap: 14px }
+}
+
+/* ═══════════════════════════════════════════════════
+   AVAILABILITY TICKER (hero meta enhancement)
+═══════════════════════════════════════════════════ */
+.meta-chip.available {
+  position: relative; padding-right: 8px;
+}
+.avail-ticker {
+  display: inline-flex; align-items: center; gap: 6px;
+  cursor: default;
+}
+.avail-tooltip {
+  position: absolute; bottom: calc(100% + 10px); left: 0;
+  background: var(--c-ink); color: rgba(255,255,255,.85);
+  font-size: .72rem; line-height: 1.55; padding: 10px 14px;
+  white-space: nowrap; opacity: 0; visibility: hidden;
+  transition: all .25s; pointer-events: none;
+  border-left: 2px solid var(--rr-red);
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+.avail-tooltip::after {
+  content: ''; position: absolute; top: 100%; left: 14px;
+  border: 5px solid transparent; border-top-color: var(--c-ink);
+}
+.avail-ticker:hover .avail-tooltip { opacity: 1; visibility: visible; transform: translateY(-2px) }
+
+/* Proj overlay hint */
+.proj-hint {
+  position: absolute; bottom: 16px; right: 16px; z-index: 4;
+  font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
+  color: rgba(255,255,255,.5); background: rgba(12,10,9,.5);
+  padding: 5px 10px; backdrop-filter: blur(4px);
+  opacity: 1; transition: opacity .3s;
+}
+.proj:hover .proj-hint { opacity: 0 }
+
+
+  .svc:hover, .venture-card:hover, .testi-card:hover,
+  .who-card:hover, .step:hover, .impact-item:hover { transform:none; box-shadow:none }
+  .hero-word { animation-name:wordDrop }
+  #impact::before, .about-card::before { display:none }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SHARED FEATURE OVERLAY SYSTEM
+═══════════════════════════════════════════════════════ */
+#process-overlay, #venture-overlay, #case-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(12,10,9,.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .45s cubic-bezier(.16,1,.3,1), visibility .45s;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+#process-overlay.open, #venture-overlay.open,
+#case-overlay.open {
+  opacity: 1; visibility: visible; pointer-events: auto;
+}
+
+/* Compact inline process timeline */
+.proc-timeline {
+  margin-top: 48px;
+  border: 1px solid var(--c-rule-xs);
+  border-left: 3px solid var(--rr-red);
+}
+.proc-tl-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: var(--c-ivory);
+  border: none;
+  cursor: pointer;
+  transition: background .25s;
+  text-align: left;
+}
+.proc-tl-head:hover { background: var(--c-white) }
+.proc-tl-head[aria-expanded="true"] .proc-tl-icon { transform: rotate(45deg) }
+.proc-tl-head[aria-expanded="true"] .proc-tl-hint { opacity: 0 }
+.proc-tl-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--f-sans);
+  font-size: .72rem;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--rr-red);
+}
+.proc-tl-icon {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 1px solid var(--rr-red);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; line-height: 1;
+  flex-shrink: 0;
+  transition: transform .35s cubic-bezier(.16,1,.3,1);
+  color: var(--rr-red);
+}
+.proc-tl-hint {
+  font-size: .65rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--c-ash-lt);
+  transition: opacity .25s;
+}
+.proc-tl-body {
+  border-top: 1px solid var(--c-rule-xs);
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .5s cubic-bezier(.16,1,.3,1);
+}
+.proc-tl-body.open {
+  max-height: 700px;
+}
+.proc-tl-items {
+  padding: 8px 0;
+}
+.proc-tl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--c-rule-xs);
+  transition: background .2s;
+}
+.proc-tl-item:last-child { border-bottom: none }
+.proc-tl-item:hover { background: rgba(155,27,48,.025) }
+.proc-tl-week {
+  font-size: .65rem;
+  font-weight: 500;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--c-ash-lt);
+  min-width: 52px;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+.proc-tl-title {
+  font-family: var(--f-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--c-ink);
+  line-height: 1.4;
+}
+.proc-tl-del {
+  font-size: .72rem;
+  color: var(--rr-red);
+  letter-spacing: .06em;
+  margin-top: 2px;
+}
+.proc-tl-milestone {
+  background: rgba(155,27,48,.03);
+}
+.proc-tl-milestone .proc-tl-week { color: var(--rr-red) }
+.proc-tl-milestone .proc-tl-title { font-weight: 500; font-style: italic }
+
+@media (max-width: 768px) {
+  .proc-tl-item { padding: 10px 16px; gap: 12px }
+  .proc-tl-week { min-width: 44px; font-size: .6rem }
+}
+.feature-overlay-page {
+  background: var(--c-paper);
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: auto;
+  padding: 48px 52px 80px;
+  position: relative;
+  border-inline: 1px solid var(--c-rule-xs);
+  transform: translateY(28px);
+  transition: transform .55s cubic-bezier(.16,1,.3,1);
+}
+#process-overlay.open .feature-overlay-page, #venture-overlay.open .feature-overlay-page, #case-overlay.open .feature-overlay-page { transform: translateY(0) }
+.feature-overlay-close {
+  position: sticky; top:16px; float:right;
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--f-sans); font-size:.68rem; font-weight:500;
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--c-ash); background:var(--c-ivory);
+  border:1px solid var(--c-rule); padding:9px 16px;
+  cursor:pointer; z-index:5; transition:all .3s;
+}
+.feature-overlay-close:hover { background:var(--c-ink); color:#fff; border-color:var(--c-ink) }
+.fo-eyebrow { margin-bottom:4px }
+.fo-title {
+  font-family:var(--f-serif); font-size:clamp(2rem,3.5vw,3.2rem);
+  font-weight:300; color:var(--c-ink); line-height:1.1; margin-block:16px 16px;
+}
+.fo-title em { font-style:italic; color:var(--rr-red) }
+.fo-sub { font-family:var(--f-serif); font-size:1.05rem; color:var(--c-ash); line-height:1.85; max-width:580px; margin-bottom:48px }
+
+.section-reveal-btn {
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:var(--f-sans); font-size:.7rem; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase;
+  color:var(--rr-red); background:none;
+  border:1px solid rgba(155,27,48,.3); padding:11px 22px;
+  cursor:pointer; transition:all .3s cubic-bezier(.16,1,.3,1);
+}
+.section-reveal-btn:hover { background:var(--rr-red); color:#fff; border-color:var(--rr-red); box-shadow:0 4px 20px rgba(155,27,48,.3); transform:translateY(-1px) }
+.section-reveal-btn svg { transition:transform .3s }
+.section-reveal-btn:hover svg { transform:translateX(4px) }
+.venture-detail-btn {
+  font-family:var(--f-sans); font-size:.68rem; font-weight:500; letter-spacing:.14em; text-transform:uppercase;
+  color:rgba(155,27,48,.7); background:none; border:none; cursor:pointer; padding:0; transition:color .3s, letter-spacing .3s;
+}
+.venture-detail-btn:hover { color:var(--rr-red); letter-spacing:.2em }
+
+/* Timeline */
+.timeline { position:relative; padding-left:32px; margin-top:8px }
+.timeline::before { content:''; position:absolute; left:8px; top:8px; bottom:8px; width:1px; background:linear-gradient(to bottom, var(--rr-red), rgba(155,27,48,.1)) }
+.tl-week { position:relative; margin-bottom:36px }
+.tl-week::before { content:''; position:absolute; left:-28px; top:6px; width:9px; height:9px; border-radius:50%; background:var(--rr-red); box-shadow:0 0 0 3px rgba(155,27,48,.15); transition:box-shadow .3s }
+.tl-week:hover::before { box-shadow:0 0 0 6px rgba(155,27,48,.2), var(--rr-glow-sm) }
+.tl-label { font-size:.65rem; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--rr-red); margin-bottom:6px }
+.tl-title { font-family:var(--f-serif); font-size:1.22rem; font-weight:500; color:var(--c-ink); margin-bottom:8px }
+.tl-body { font-family:var(--f-serif); font-size:1rem; color:var(--c-ash); line-height:1.82 }
+.tl-deliverable { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:#fff; background:var(--rr-red); padding:4px 12px; margin-top:10px }
+.tl-milestone { border:1px solid rgba(155,27,48,.2); background:rgba(155,27,48,.03); padding:16px 20px; margin-top:12px; border-left:3px solid var(--rr-red) }
+.tl-milestone-title { font-size:.68rem; letter-spacing:.16em; text-transform:uppercase; color:var(--rr-red); margin-bottom:4px }
+.tl-milestone p { font-family:var(--f-serif); font-size:.96rem; color:var(--c-ash); line-height:1.7 }
+
+/* Venture detail */
+.vd-name { font-family:var(--f-serif); font-size:clamp(2.2rem,4vw,3.8rem); font-weight:300; color:var(--c-ink); line-height:1; margin-bottom:8px }
+.vd-tagline { font-family:var(--f-serif); font-size:1.2rem; font-style:italic; color:var(--rr-red); margin-bottom:28px }
+.vd-grid { display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-bottom:40px }
+.vd-section-title { font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; color:var(--rr-red); margin-bottom:14px }
+.vd-body { font-family:var(--f-serif); font-size:1.05rem; color:var(--c-ash); line-height:1.88 }
+.vd-list { list-style:none; display:flex; flex-direction:column; gap:10px }
+.vd-list li { display:flex; align-items:flex-start; gap:10px; font-family:var(--f-serif); font-size:1rem; color:var(--c-ash); line-height:1.5 }
+.vd-list li::before { content:''; width:6px; height:6px; background:var(--rr-red); border-radius:50%; flex-shrink:0; margin-top:6px }
+.vd-tech-tag { display:inline-block; font-size:.68rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--c-ash); border:1px solid var(--c-rule); padding:5px 12px; margin:4px }
+
+/* Quote calculator */
+
+@media (max-width:768px) {
+  .feature-overlay-page { padding:44px 20px 80px }
+  .feature-overlay-close { position:fixed; top:12px; right:12px; float:none }
+  .vd-grid { grid-template-columns:1fr }
 }
 </style>
 </head>
@@ -2949,7 +4746,10 @@ footer { border-top: 4px solid var(--c-gold) !important }
       <text x="48" y="50" text-anchor="middle" font-family="Helvetica Neue,Arial,sans-serif" font-size="5.5" fill="#9B1B30" letter-spacing="3.5">INTELLIGENCE</text>
     </svg>
   </div>
-  <div class="loader-bar"></div>
+  <div class="loader-tagline">Digital Presence &nbsp;·&nbsp; Crafted with Precision</div>
+  <div class="loader-bar-wrap">
+    <div class="loader-bar"></div>
+  </div>
 </div>
 
 <!-- ── Scroll progress ── -->
@@ -3009,13 +4809,14 @@ footer { border-top: 4px solid var(--c-gold) !important }
       <li><a href="#contact">Contact</a></li>
     </ul>
     <a href="#contact" class="nav-cta">Start a Project</a>
-    <div class="nav-burger" id="burger" onclick="toggleDrawer()">
+    <div class="nav-burger" id="burger" onclick="toggleDrawer()" aria-label="Open navigation menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </div>
   </div>
 </nav>
 
-<div class="drawer" id="drawer">
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+  <div class="drawer-close" onclick="closeDrawer()" aria-label="Close menu">&#215;</div>
   <a href="#about"        onclick="closeDrawer()">About</a>
   <a href="#services"     onclick="closeDrawer()">Services</a>
   <a href="#projects"     onclick="closeDrawer()">Work</a>
@@ -3029,6 +4830,7 @@ footer { border-top: 4px solid var(--c-gold) !important }
      HERO
 ══════════════════════════════════════ -->
 <section id="hero">
+  <canvas id="rr-particles" aria-hidden="true"></canvas>
   <div class="hero-col"></div>
 
   <!-- Refined compass-rose ornament -->
@@ -3274,6 +5076,65 @@ footer { border-top: 4px solid var(--c-gold) !important }
 <!-- ══════════════════════════════════════
      SERVICES
 ══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════
+     PRICING OVERLAY PAGE (hidden until triggered)
+══════════════════════════════════════════════════ -->
+<div id="pricing-overlay" aria-hidden="true">
+  <div id="pricing-page">
+
+    <!-- Close -->
+    <button id="pricing-close" onclick="closePricing()" aria-label="Close pricing">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M1 1l16 16M17 1L1 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Close
+    </button>
+
+    <!-- Header -->
+    <div id="pricing-header">
+      <div id="pricing-eyebrow">
+        <span class="eyebrow" id="pricing-service-label">Investment &amp; Plans</span>
+      </div>
+      <h1 id="pricing-title">Choose Your <em>Plan</em></h1>
+      <p id="pricing-sub">Transparent, structured pricing for every stage of ambition. All plans are custom-built — no page builders, no templates. Domain, hosting, and third-party costs are itemised below each plan.</p>
+    </div>
+
+    <!-- What's included legend -->
+    <div id="pricing-legend">
+      <div class="pl-item"><span class="pl-dot pl-yes"></span>Included</div>
+      <div class="pl-item"><span class="pl-dot pl-add"></span>Add-on available</div>
+      <div class="pl-item"><span class="pl-dot pl-no"></span>Not included</div>
+    </div>
+
+    <!-- Plans grid — populated by JS -->
+    <div id="pricing-plans"></div>
+
+    <!-- Third-party cost breakdown -->
+    <div id="pricing-infra">
+      <div class="infra-head">
+        <span class="eyebrow">Real Cost Breakdown</span>
+        <h3>What You Actually Pay <em>Third Parties</em></h3>
+        <p>These are live market rates (India, 2025). Manvora Intelligence sources the best value for your tier — you pay providers directly, with full transparency.</p>
+      </div>
+      <div id="infra-grid"></div>
+    </div>
+
+    <!-- FAQ -->
+    <div id="pricing-faq">
+      <h3>Frequently Asked <em>Questions</em></h3>
+      <div id="faq-list"></div>
+    </div>
+
+    <!-- CTA -->
+    <div id="pricing-cta">
+      <p>Every project is quoted individually after a 30-minute discovery call. The plans above are starting frameworks — your final investment is shaped by your specific goals.</p>
+      <a href="#contact" onclick="closePricing()" class="btn btn-dark"><span>Book a Free Discovery Call</span></a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SERVICES
+══════════════════════════════════════ -->
 <section class="section" id="services">
   <div class="wrap">
     <div class="svc-head reveal">
@@ -3281,62 +5142,242 @@ footer { border-top: 4px solid var(--c-gold) !important }
         <span class="eyebrow">Services</span>
         <h2 class="svc-h2">Services Defined by<br><em>Precision &amp; Purpose</em></h2>
       </div>
-      <p class="svc-sub">Each engagement is scoped with intention. No templates, no off-the-shelf answers — only solutions calibrated to the specific demands of your business.</p>
+      <p class="svc-sub">Click any service to discover what's included — then view transparent pricing plans built for your stage of growth.</p>
     </div>
 
-    <!-- Premium availability note -->
     <div class="filter-line reveal" style="margin-bottom:48px">
       <div class="filter-line-dot"></div>
-      <p>I work with a limited number of clients at a time to ensure exceptional quality and undivided attention on every engagement.</p>
+      <p>Hover to explore · Click to reveal plans &amp; pricing for each service</p>
     </div>
 
-    <div class="svc-grid reveal d1">
-      <div class="svc">
-        <span class="svc-idx">01</span>
-        <h3>Business Website Development</h3>
-        <p>Custom-architected platforms that project authority, build credibility, and convert considered visitors into committed clients.</p>
+    <div class="svc-grid reveal d1" id="svc-flip-grid">
+
+      <!-- Card 01 -->
+      <div class="svc svc-flip" data-svc="0">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">01</span>
+            <h3>Business Website Development</h3>
+            <p>Custom-architected platforms that project authority, build credibility, and convert considered visitors into committed clients.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">01</span>
+            <h4>Business Website</h4>
+            <ul class="svc-back-list">
+              <li>✦ Custom design, no templates</li>
+              <li>✦ Mobile-first, Core Web Vitals optimised</li>
+              <li>✦ CMS integration (optional)</li>
+              <li>✦ Contact form + WhatsApp CTA</li>
+              <li>✦ SEO foundation included</li>
+              <li>✦ 3 rounds of revisions</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(0)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-      <div class="svc">
-        <span class="svc-idx">02</span>
-        <h3>E-Commerce Website Solutions</h3>
-        <p>Precision-engineered online stores with frictionless customer journeys, conversion-optimised architecture, and scalable back-end systems.</p>
+
+      <!-- Card 02 -->
+      <div class="svc svc-flip" data-svc="1">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">02</span>
+            <h3>E-Commerce Website Solutions</h3>
+            <p>Precision-engineered online stores with frictionless customer journeys, conversion-optimised architecture, and scalable back-end systems.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">02</span>
+            <h4>E-Commerce</h4>
+            <ul class="svc-back-list">
+              <li>✦ Product catalogue up to 500 SKUs</li>
+              <li>✦ Razorpay / Stripe / UPI payment gateway</li>
+              <li>✦ Inventory &amp; order management</li>
+              <li>✦ Abandoned cart recovery</li>
+              <li>✦ GST-compliant invoicing</li>
+              <li>✦ Mobile app-ready API</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(1)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-      <div class="svc">
-        <span class="svc-idx">03</span>
-        <h3>Hotel &amp; Restaurant Websites</h3>
-        <p>Immersive digital presences for hospitality brands — built to communicate excellence and drive direct, commission-free reservations.</p>
+
+      <!-- Card 03 -->
+      <div class="svc svc-flip" data-svc="2">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">03</span>
+            <h3>Hotel &amp; Restaurant Websites</h3>
+            <p>Immersive digital presences for hospitality brands — built to communicate excellence and drive direct, commission-free reservations.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">03</span>
+            <h4>Hospitality</h4>
+            <ul class="svc-back-list">
+              <li>✦ Online reservation / booking system</li>
+              <li>✦ Menu &amp; room gallery with lightbox</li>
+              <li>✦ Google Maps + reviews integration</li>
+              <li>✦ WhatsApp direct booking CTA</li>
+              <li>✦ Multi-language support</li>
+              <li>✦ Commission-free direct bookings</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(2)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-      <div class="svc">
-        <span class="svc-idx">04</span>
-        <h3>AI Chatbot Development</h3>
-        <p>Context-intelligent assistants powered by LLMs and RAG — engaging customers with genuine comprehension, not scripted responses.</p>
+
+      <!-- Card 04 -->
+      <div class="svc svc-flip" data-svc="3">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">04</span>
+            <h3>AI Chatbot Development</h3>
+            <p>Context-intelligent assistants powered by LLMs and RAG — engaging customers with genuine comprehension, not scripted responses.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">04</span>
+            <h4>AI Chatbot</h4>
+            <ul class="svc-back-list">
+              <li>✦ GPT-4o / Claude 3.5 powered</li>
+              <li>✦ RAG on your documents &amp; FAQs</li>
+              <li>✦ WhatsApp + website embed</li>
+              <li>✦ Lead capture &amp; CRM handoff</li>
+              <li>✦ Multilingual (Hindi, Telugu, English)</li>
+              <li>✦ Analytics dashboard</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(3)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-      <div class="svc">
-        <span class="svc-idx">05</span>
-        <h3>Landing Page Design</h3>
-        <p>Every element subordinated to one objective: the conversion. Crafted with rigour, validated with data.</p>
+
+      <!-- Card 05 -->
+      <div class="svc svc-flip" data-svc="4">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">05</span>
+            <h3>Landing Page Design</h3>
+            <p>Every element subordinated to one objective: the conversion. Crafted with rigour, validated with data.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">05</span>
+            <h4>Landing Page</h4>
+            <ul class="svc-back-list">
+              <li>✦ Single-page conversion architecture</li>
+              <li>✦ A/B testing framework ready</li>
+              <li>✦ Google / Meta Ads pixel setup</li>
+              <li>✦ Form → CRM / WhatsApp automation</li>
+              <li>✦ Sub-2s load time guaranteed</li>
+              <li>✦ 48-hour delivery on Starter plan</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(4)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-      <div class="svc">
-        <span class="svc-idx">06</span>
-        <h3>Website Redesign &amp; Optimisation</h3>
-        <p>Existing digital assets reimagined with intent — elevated in performance, coherence, and the authority they project.</p>
+
+      <!-- Card 06 -->
+      <div class="svc svc-flip" data-svc="5">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">06</span>
+            <h3>Website Redesign &amp; Optimisation</h3>
+            <p>Existing digital assets reimagined with intent — elevated in performance, coherence, and the authority they project.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">06</span>
+            <h4>Redesign</h4>
+            <ul class="svc-back-list">
+              <li>✦ Full UX audit &amp; heatmap analysis</li>
+              <li>✦ Brand-consistent visual overhaul</li>
+              <li>✦ Core Web Vitals remediation</li>
+              <li>✦ Content restructure &amp; SEO re-map</li>
+              <li>✦ Zero downtime migration</li>
+              <li>✦ 30-day post-launch support</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(5)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-      <div class="svc">
-        <span class="svc-idx">07</span>
-        <h3>SEO &amp; Performance Setup</h3>
-        <p>Search visibility and loading excellence delivered through clean code, Core Web Vitals mastery, and a sustainable methodology.</p>
+
+      <!-- Card 07 -->
+      <div class="svc svc-flip" data-svc="6">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">07</span>
+            <h3>SEO &amp; Performance Setup</h3>
+            <p>Search visibility and loading excellence delivered through clean code, Core Web Vitals mastery, and a sustainable methodology.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">07</span>
+            <h4>SEO &amp; Performance</h4>
+            <ul class="svc-back-list">
+              <li>✦ Technical SEO audit (80+ checks)</li>
+              <li>✦ Google Search Console setup</li>
+              <li>✦ Schema.org structured data</li>
+              <li>✦ Image optimisation &amp; lazy loading</li>
+              <li>✦ Monthly ranking report</li>
+              <li>✦ Local SEO for Google Maps</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(6)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-      <div class="svc">
-        <span class="svc-idx">08</span>
-        <h3>UI / UX Design</h3>
-        <p>Interfaces shaped by user cognition and business logic — elegant to inhabit, purposeful in every flow and interaction.</p>
+
+      <!-- Card 08 -->
+      <div class="svc svc-flip" data-svc="7">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">08</span>
+            <h3>UI / UX Design</h3>
+            <p>Interfaces shaped by user cognition and business logic — elegant to inhabit, purposeful in every flow and interaction.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">08</span>
+            <h4>UI / UX Design</h4>
+            <ul class="svc-back-list">
+              <li>✦ User research &amp; persona mapping</li>
+              <li>✦ Wireframes → high-fidelity Figma</li>
+              <li>✦ Interactive prototype for testing</li>
+              <li>✦ Design system &amp; component library</li>
+              <li>✦ Handoff with developer specs</li>
+              <li>✦ Unlimited revisions in design phase</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(7)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-      <div class="svc">
-        <span class="svc-idx">09</span>
-        <h3>Maintenance &amp; Support</h3>
-        <p>Ongoing stewardship of your digital presence — proactive, attentive, and aligned with your evolving objectives.</p>
+
+      <!-- Card 09 -->
+      <div class="svc svc-flip" data-svc="8">
+        <div class="svc-inner">
+          <div class="svc-front">
+            <span class="svc-idx">09</span>
+            <h3>Maintenance &amp; Support</h3>
+            <p>Ongoing stewardship of your digital presence — proactive, attentive, and aligned with your evolving objectives.</p>
+            <div class="svc-flip-hint">Click to explore plans <span>→</span></div>
+          </div>
+          <div class="svc-back">
+            <span class="svc-back-num">09</span>
+            <h4>Maintenance</h4>
+            <ul class="svc-back-list">
+              <li>✦ Daily uptime monitoring</li>
+              <li>✦ Weekly security scans &amp; patches</li>
+              <li>✦ Monthly performance report</li>
+              <li>✦ Content updates (up to 4/month)</li>
+              <li>✦ Priority WhatsApp support</li>
+              <li>✦ Annual domain &amp; hosting renewal</li>
+            </ul>
+            <button class="svc-price-btn" onclick="openPricing(8)">View Pricing Plans</button>
+          </div>
+        </div>
       </div>
-    </div>
+
+    </div><!-- /svc-grid -->
   </div>
 </section>
 
@@ -3362,7 +5403,7 @@ footer { border-top: 4px solid var(--c-gold) !important }
     <div class="proj-grid reveal d1">
 
       <!-- Card 1: AI Dashboard -->
-      <div class="proj">
+      <div class="proj" data-proj="0" onclick="openProjModal(0)" style="cursor:pointer">
         <div class="proj-screen ps1">
           <div class="proj-mockup">
             <div class="laptop">
@@ -3425,8 +5466,7 @@ footer { border-top: 4px solid var(--c-gold) !important }
       </div>
 
       <!-- Card 2: E-Commerce + mobile -->
-      <div class="proj">
-        <div class="proj-screen ps2">
+      <div class="proj" data-proj="1" onclick="openProjModal(1)" style="cursor:pointer">
           <div class="proj-mockup">
             <div class="laptop">
               <div class="laptop-body">
@@ -3482,7 +5522,7 @@ footer { border-top: 4px solid var(--c-gold) !important }
       </div>
 
       <!-- Card 3: Hotel -->
-      <div class="proj">
+      <div class="proj" data-proj="2" onclick="openProjModal(2)" style="cursor:pointer">
         <div class="proj-screen ps3">
           <div class="proj-mockup">
             <div class="laptop">
@@ -3524,7 +5564,7 @@ footer { border-top: 4px solid var(--c-gold) !important }
       </div>
 
       <!-- Card 4: Corporate -->
-      <div class="proj">
+      <div class="proj" data-proj="3" onclick="openProjModal(3)" style="cursor:pointer">
         <div class="proj-screen ps4">
           <div class="proj-mockup">
             <div class="laptop">
@@ -3596,7 +5636,7 @@ footer { border-top: 4px solid var(--c-gold) !important }
     <div class="ventures-grid reveal d1">
 
       <!-- FloMKa — Live -->
-      <div class="venture-card">
+      <div class="venture-card" data-venture="0">
         <div class="venture-status live">
           <div class="venture-status-dot"></div>
           Live Product
@@ -3606,14 +5646,17 @@ footer { border-top: 4px solid var(--c-gold) !important }
         <p class="venture-desc">
           Founder &amp; CEO. FloMKa is an AI intelligence platform delivering curated AI feeds, tool discovery, trend analysis, community insights, and ideas — built for professionals navigating the fast-moving AI landscape. A single destination for everything that matters in artificial intelligence.
         </p>
-        <a href="https://flo-m-ka.vercel.app/" target="_blank" rel="noopener" class="venture-link">
-          Explore FloMKa
-          <svg viewBox="0 0 16 7" fill="none"><path d="M0 3.5H14M14 3.5L11 1M14 3.5L11 6" stroke="currentColor" stroke-width="1"/></svg>
-        </a>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:auto">
+          <a href="https://flo-m-ka.vercel.app/" target="_blank" rel="noopener" class="venture-link">
+            Explore FloMKa
+            <svg viewBox="0 0 16 7" fill="none"><path d="M0 3.5H14M14 3.5L11 1M14 3.5L11 6" stroke="currentColor" stroke-width="1"/></svg>
+          </a>
+          <button class="venture-detail-btn" onclick="openVenture(0)">Full Details →</button>
+        </div>
       </div>
 
       <!-- Samadam — Building -->
-      <div class="venture-card">
+      <div class="venture-card" data-venture="1">
         <div class="venture-status building">
           <div class="venture-status-dot"></div>
           In Development
@@ -3623,7 +5666,10 @@ footer { border-top: 4px solid var(--c-gold) !important }
         <p class="venture-desc">
           Co-Founder. Samadam is a multilingual AI-powered platform for public grievance redressal — combining explainable AI with transparent decision pathways across Indian languages. Designed to make institutional processes accessible, fair, and comprehensible for every citizen.
         </p>
-        <div class="venture-badge">Coming Soon</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:auto">
+          <div class="venture-badge">Coming Soon</div>
+          <button class="venture-detail-btn" onclick="openVenture(1)">Full Details →</button>
+        </div>
       </div>
 
       <!-- Nexhire — Building -->
@@ -3637,7 +5683,10 @@ footer { border-top: 4px solid var(--c-gold) !important }
         <p class="venture-desc">
           Co-Founder. Nexhire is an AI-native recruitment platform that eliminates the inefficiencies of traditional hiring — connecting high-calibre candidates with the right opportunities through intelligent matching, bias-aware evaluation, and streamlined workflows for both sides of the table.
         </p>
-        <div class="venture-badge">Coming Soon</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:auto">
+          <div class="venture-badge">Coming Soon</div>
+          <button class="venture-detail-btn" onclick="openVenture(2)">Full Details →</button>
+        </div>
       </div>
 
     </div>
@@ -3809,6 +5858,31 @@ footer { border-top: 4px solid var(--c-gold) !important }
         <div class="step-n">04</div>
         <div class="step-t">Delivery</div>
         <p class="step-d">Exhaustive testing, immaculate deployment, and a complete handover. Your site launches with confidence — and continues to lead.</p>
+      </div>
+    </div>
+
+    <!-- Compact inline timeline accordion -->
+    <div class="proc-timeline reveal d2">
+      <button class="proc-tl-head" onclick="toggleProcTimeline(this)" aria-expanded="false">
+        <span class="proc-tl-label">
+          <span class="proc-tl-icon">+</span>
+          See week-by-week project breakdown
+        </span>
+        <span class="proc-tl-hint">Expand</span>
+      </button>
+      <div class="proc-tl-body">
+        <div class="proc-tl-items">
+          <div class="proc-tl-item"><span class="proc-tl-week">Day 1–2</span><div><div class="proc-tl-title">Discovery Call &amp; Brief</div><div class="proc-tl-del">✦ Project Brief Document</div></div></div>
+          <div class="proc-tl-item"><span class="proc-tl-week">Day 3–5</span><div><div class="proc-tl-title">Research &amp; Strategy</div><div class="proc-tl-del">✦ Strategy &amp; Sitemap Deck</div></div></div>
+          <div class="proc-tl-item proc-tl-milestone"><span class="proc-tl-week">Check</span><div><div class="proc-tl-title">Client Sign-off #1 — strategy approved</div></div></div>
+          <div class="proc-tl-item"><span class="proc-tl-week">Week 2</span><div><div class="proc-tl-title">Wireframes &amp; Architecture</div><div class="proc-tl-del">✦ Figma Wireframe Pack</div></div></div>
+          <div class="proc-tl-item"><span class="proc-tl-week">Wk 2–3</span><div><div class="proc-tl-title">Visual Design (2 revision rounds)</div><div class="proc-tl-del">✦ Full Design System</div></div></div>
+          <div class="proc-tl-item"><span class="proc-tl-week">Wk 3–5</span><div><div class="proc-tl-title">Development &amp; Build</div><div class="proc-tl-del">✦ Staging URL delivered</div></div></div>
+          <div class="proc-tl-item proc-tl-milestone"><span class="proc-tl-week">Check</span><div><div class="proc-tl-title">Client Sign-off #2 — review on staging</div></div></div>
+          <div class="proc-tl-item"><span class="proc-tl-week">Week 5</span><div><div class="proc-tl-title">QA, Testing &amp; Content Integration</div><div class="proc-tl-del">✦ QA Report</div></div></div>
+          <div class="proc-tl-item"><span class="proc-tl-week">Week 6</span><div><div class="proc-tl-title">Launch &amp; Full Handover</div><div class="proc-tl-del">✦ Live site + Handover Pack</div></div></div>
+          <div class="proc-tl-item"><span class="proc-tl-week">After</span><div><div class="proc-tl-title">Support &amp; Monitoring</div><div class="proc-tl-del">✦ 7–180 days depending on plan</div></div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -4057,6 +6131,21 @@ footer { border-top: 4px solid var(--c-gold) !important }
         </ul>
       </div>
     </div>
+
+    <!-- ── Compact Process Timeline ── -->
+    <div id="ft-timeline">
+      <div id="ft-timeline-header" onclick="toggleFooterTimeline()">
+        <span class="eyebrow" style="color:rgba(155,27,48,.7)">Project Timeline</span>
+        <div id="ft-timeline-toggle">
+          <span id="ft-tl-label">How a project unfolds, week by week</span>
+          <svg id="ft-tl-icon" width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5l5 5 5-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div id="ft-timeline-body">
+        <div id="ft-tl-steps"></div>
+      </div>
+    </div>
+
     <div class="ft-bottom">
       <p class="ft-copy">© 2025 <em>Manvora Intelligence</em>. All rights reserved. Founded by Bhanu Teja Modem.</p>
       <div class="ft-legal">
@@ -4075,31 +6164,79 @@ footer { border-top: 4px solid var(--c-gold) !important }
    MANVORA INTELLIGENCE — Animation Engine
 ════════════════════════════════════════ */
 
-/* ── 1. Page Loader ── */
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const loader = document.getElementById('page-loader');
-    loader.classList.add('hidden');
-    // After loader hides, activate all animations
-    document.body.classList.add('js-ready');
-    initHeroWords();
-    animateGoldRules();
-  }, 1100);
+/* ── 1. Page Loader — FOUC-proof ── */
+
+// Step 1: As soon as DOM is parsed, make body visible behind the loader.
+// The loader is already covering the page (position:fixed, z:99999),
+// so revealing body here is safe — content shows only after loader lifts.
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.style.visibility = 'visible';
 });
 
-/* ── 2. Scroll progress bar ── */
-const progressBar = document.getElementById('scroll-progress');
-window.addEventListener('scroll', () => {
-  const scrolled = window.scrollY;
-  const total = document.documentElement.scrollHeight - window.innerHeight;
-  progressBar.style.width = (scrolled / total * 100) + '%';
-}, { passive: true });
+// Step 2: Hide loader after page fully loads (fonts, images, etc.)
+// Minimum display time of 1.1s so the animation always completes gracefully.
+(function () {
+  const MIN_DISPLAY = 1100; // ms — bar animation is ~1.45s total, feel is ~1.1s
+  const loadStart = Date.now();
 
-/* ── 3. Nav scroll state ── */
-const nav = document.getElementById('nav');
-window.addEventListener('scroll', () => {
-  nav.classList.toggle('s', window.scrollY > 60);
-}, { passive: true });
+  function dismissLoader() {
+    const elapsed = Date.now() - loadStart;
+    const remaining = Math.max(0, MIN_DISPLAY - elapsed);
+    setTimeout(() => {
+      const loader = document.getElementById('page-loader');
+      if (!loader) return;
+      loader.classList.add('hidden');
+      // Fire animations only after loader lifts
+      document.body.classList.add('js-ready');
+      initHeroWords();
+      animateGoldRules();
+    }, remaining);
+  }
+
+  if (document.readyState === 'complete') {
+    dismissLoader();
+  } else {
+    window.addEventListener('load', dismissLoader);
+    // Safety net: never block for more than 4s on slow connections
+    setTimeout(dismissLoader, 4000);
+  }
+})();
+
+/* ── 2+3+23. Single throttled scroll handler (progress + nav + parallax) ── */
+(function () {
+  const progressBar = document.getElementById('scroll-progress');
+  const nav = document.getElementById('nav');
+  const heroCol = document.querySelector('.hero-col');
+  const heroGeo = document.querySelector('.hero-geo');
+  const backTop = document.getElementById('back-top');
+  let ticking = false;
+
+  function onScroll() {
+    const y = window.scrollY;
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+
+    // Progress bar
+    if (progressBar) progressBar.style.width = (y / total * 100) + '%';
+
+    // Nav shrink
+    if (nav) nav.classList.toggle('s', y > 60);
+
+    // Back to top visibility
+    if (backTop) backTop.classList.toggle('visible', y > 400);
+
+    // Hero parallax — only while hero is visible
+    if (y < window.innerHeight * 1.1) {
+      if (heroCol) heroCol.style.transform = `translateY(${y * .12}px)`;
+      if (heroGeo) heroGeo.style.transform = `translate(50%, calc(-50% + ${y * .06}px))`;
+    }
+
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
+  }, { passive: true });
+})();
 
 /* ── 4. Scroll reveal with stagger ── */
 const ro = new IntersectionObserver(entries => {
@@ -4148,13 +6285,44 @@ function animateGoldRules() {
 function initHeroWords() {
   const h1 = document.querySelector('.hero-h1');
   if (!h1) return;
-  // Wrap each word in a span
-  h1.innerHTML = h1.innerHTML.replace(/<br>/g, ' <br> ').split(/\s+/).map((w, i) => {
-    if (w === '<br>') return '<br>';
-    const isEm = w.startsWith('<em') || w.includes('</em>');
-    if (isEm) return `<span class="hero-word" style="animation-delay:${(i * 0.09) + 0.1}s">${w}</span>`;
-    return `<span class="hero-word" style="animation-delay:${(i * 0.09) + 0.1}s">${w}</span>`;
-  }).join(' ');
+
+  // Walk child nodes safely — never touch innerHTML as a string.
+  // This preserves <br> and <em> elements as real DOM nodes.
+  let wordIndex = 0;
+
+  function wrapTextNode(node) {
+    const text = node.textContent;
+    const words = text.split(/(\s+)/); // keep whitespace tokens
+    const frag = document.createDocumentFragment();
+    words.forEach(token => {
+      if (/^\s+$/.test(token)) {
+        // pure whitespace — keep as text node
+        frag.appendChild(document.createTextNode(token));
+      } else if (token.length > 0) {
+        const span = document.createElement('span');
+        span.className = 'hero-word';
+        span.style.animationDelay = ((wordIndex * 0.09) + 0.1).toFixed(2) + 's';
+        span.textContent = token;
+        frag.appendChild(span);
+        wordIndex++;
+      }
+    });
+    node.parentNode.replaceChild(frag, node);
+  }
+
+  // Collect child nodes first (live NodeList changes during iteration)
+  const children = Array.from(h1.childNodes);
+  children.forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      wrapTextNode(node);
+    } else if (node.nodeName === 'EM') {
+      // Wrap the em element itself as one animated word-unit
+      node.classList.add('hero-word');
+      node.style.animationDelay = ((wordIndex * 0.09) + 0.1).toFixed(2) + 's';
+      wordIndex++;
+    }
+    // BR nodes pass through untouched
+  });
 }
 
 /* ── 7. Animated number counters ── */
@@ -4235,21 +6403,29 @@ const sectionObserver = new IntersectionObserver(entries => {
 }, { threshold: .4 });
 sections.forEach(s => sectionObserver.observe(s));
 
-/* ── 11. Smooth parallax on hero side panel ── */
-window.addEventListener('scroll', () => {
-  const heroCol = document.querySelector('.hero-col');
-  if (heroCol && window.scrollY < window.innerHeight) {
-    heroCol.style.transform = `translateY(${window.scrollY * .12}px)`;
-  }
-}, { passive: true });
+/* ── 11. (parallax handled by unified scroll handler above) ── */
 
 /* ── 12. Mobile drawer ── */
 function toggleDrawer() {
-  document.getElementById('drawer').classList.toggle('open');
+  const drawer = document.getElementById('drawer');
+  const burger = document.getElementById('burger');
+  const isOpen = drawer.classList.toggle('open');
+  burger.classList.toggle('active', isOpen);
+  scrollLock(isOpen, 'drawer');
+  burger.setAttribute('aria-expanded', isOpen);
 }
 function closeDrawer() {
   document.getElementById('drawer').classList.remove('open');
+  document.getElementById('burger').classList.remove('active');
+  scrollLock(false, 'drawer');
+  document.getElementById('burger').setAttribute('aria-expanded', 'false');
 }
+// Close on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer() });
+// Close if tapping outside drawer area
+document.getElementById('drawer').addEventListener('click', e => {
+  if (e.target === document.getElementById('drawer')) closeDrawer();
+});
 
 /* ── 13. Form submit ── */
 function handleSubmit(e) {
@@ -4264,12 +6440,26 @@ function handleSubmit(e) {
   }, 4000);
 }
 
-/* ── 14. Smooth anchor scroll ── */
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    const t = document.querySelector(a.getAttribute('href'));
-    if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+/* ── 14. Smooth anchor scroll — closes overlays before navigating ── */
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const href = a.getAttribute('href');
+  if (!href || href === '#') return;
+  const t = document.querySelector(href);
+  if (!t) return;
+  e.preventDefault();
+  // Close any open overlay/pricing first, then scroll
+  const allOverlayIds = ['pricing-overlay','venture-overlay','case-overlay','process-overlay'];
+  allOverlayIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.classList.contains('open')) {
+      if (id === 'pricing-overlay') closePricing();
+      else closeOverlay(id);
+    }
   });
+  // Small delay so scroll-lock releases before scrollIntoView
+  setTimeout(() => t.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 });
 
 /* ── 15. Section headings: eyebrow label fade ── */
@@ -4329,118 +6519,7 @@ document.querySelectorAll('.section, #impact, #who, #ventures, #testimonials').f
   document.querySelectorAll('.slide-left, .slide-right, .scale-in').forEach(el => slideObs.observe(el));
 })();
 
-/* ── 17. Staggered card animation with red tint on entry ── */
-(function() {
-  const cardObs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      const cards = e.target.querySelectorAll(
-        '.svc, .why-item, .ind-item, .venture-card, .testi-card, .impact-item, .who-card, .step, .proj'
-      );
-      cards.forEach((card, i) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        card.style.transition = `opacity .7s cubic-bezier(.16,1,.3,1) ${i*85}ms, transform .7s cubic-bezier(.16,1,.3,1) ${i*85}ms`;
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }));
-      });
-      cardObs.unobserve(e.target);
-    });
-  }, { threshold: .05, rootMargin:'0px 0px -40px 0px' });
-
-  document.querySelectorAll(
-    '.svc-grid, .why-grid, .ind-row, .ind-row-2, .ventures-grid, .testi-grid, .impact-grid, .who-cards, .steps, .proj-grid'
-  ).forEach(g => cardObs.observe(g));
-})();
-
-/* ── 18. Paragraph text fade-up ── */
-(function() {
-  const paraObs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      const paras = e.target.querySelectorAll('p:not(.meta-chip):not(.strip-item)');
-      paras.forEach((p, i) => {
-        if (p.dataset.animated) return;
-        p.dataset.animated = '1';
-        p.style.opacity = '0';
-        p.style.transform = 'translateY(14px)';
-        p.style.transition = `opacity .7s ease ${i * 60 + 100}ms, transform .7s ease ${i * 60 + 100}ms`;
-        setTimeout(() => { p.style.opacity = '1'; p.style.transform = 'translateY(0)'; }, 50);
-      });
-      paraObs.unobserve(e.target);
-    });
-  }, { threshold: .1 });
-  document.querySelectorAll('.about-grid, #who, #ventures, #testimonials, #contact, #cta').forEach(s => paraObs.observe(s));
-})();
-
-/* ── 19. Section heading number count (impact) ── */
-(function() {
-  const countObs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      e.target.querySelectorAll('.impact-num').forEach(el => {
-        const txt = el.textContent.trim();
-        const num = parseFloat(txt);
-        const suf = txt.replace(/[\d.]/g, '');
-        const isFloat = txt.includes('.');
-        const dur = 1800, start = performance.now();
-        const tick = now => {
-          const p = Math.min((now - start) / dur, 1);
-          const ease = 1 - Math.pow(1 - p, 4);
-          el.textContent = (isFloat ? (ease * num).toFixed(1) : Math.round(ease * num)) + suf;
-          if (p < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-      });
-      countObs.unobserve(e.target);
-    });
-  }, { threshold: .3 });
-  const imp = document.getElementById('impact');
-  if (imp) countObs.observe(imp);
-})();
-
-/* ── 20. Gold rule draw on scroll ── */
-(function() {
-  const ruleObs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.style.transition = 'transform 1.4s cubic-bezier(.16,1,.3,1)';
-        e.target.style.transformOrigin = 'left';
-        e.target.style.transform = 'scaleX(1)';
-        ruleObs.unobserve(e.target);
-      }
-    });
-  }, { threshold: .5 });
-  document.querySelectorAll('.gold-rule').forEach(r => {
-    r.style.transform = 'scaleX(0)';
-    r.style.transformOrigin = 'left';
-    ruleObs.observe(r);
-  });
-})();
-
-/* ── 21. Section eyebrow line draw ── */
-(function() {
-  document.querySelectorAll('.eyebrow::before').forEach(() => {});
-  const ebObs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      const eb = e.target.querySelector('.eyebrow');
-      if (eb && !eb.dataset.lineDrawn) {
-        eb.dataset.lineDrawn = '1';
-        eb.style.clipPath = 'inset(0 100% 0 0)';
-        eb.style.transition = 'clip-path .8s cubic-bezier(.16,1,.3,1) .1s, opacity .4s ease';
-        setTimeout(() => {
-          eb.style.clipPath = 'inset(0 0% 0 0)';
-          eb.style.opacity = '1';
-        }, 50);
-      }
-      ebObs.unobserve(e.target);
-    });
-  }, { threshold: .2 });
-  document.querySelectorAll('section, #impact, #who, #ventures, #testimonials').forEach(s => ebObs.observe(s));
-})();
+/* ── 17–21 merged into scripts 4–6 and 10 above — removed to reduce observer count ── */
 
 /* ── 22. Nav active section tracker ── */
 (function() {
@@ -4458,17 +6537,7 @@ document.querySelectorAll('.section, #impact, #who, #ventures, #testimonials').f
   secs.forEach(s => secObs.observe(s));
 })();
 
-/* ── 23. Hero parallax on scroll ── */
-(function() {
-  const col = document.querySelector('.hero-col');
-  const geo = document.querySelector('.hero-geo');
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY;
-    if (y > window.innerHeight) return;
-    if (col) col.style.transform = `translateY(${y * .13}px)`;
-    if (geo) geo.style.transform = `translate(50%, calc(-50% + ${y * .06}px))`;
-  }, { passive: true });
-})();
+/* ── 23. (parallax handled by unified scroll handler above) ── */
 
 /* ── 24. Magnetic button pull ── */
 document.querySelectorAll('.btn, .nav-cta').forEach(btn => {
@@ -4513,4 +6582,980 @@ document.querySelectorAll('.proj').forEach(card => {
   });
 });
 
+/* ══════════════════════════════════════════════════
+   ULTRA PREMIUM ANIMATIONS — JS ENGINE
+══════════════════════════════════════════════════ */
+
+/* ── A. RR Red Particle System — desktop only ── */
+(function () {
+  // Skip on touch devices and reduced-motion preference — too heavy
+  if (window.matchMedia('(pointer:coarse)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const canvas = document.getElementById('rr-particles');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+
+  const RR = [[155,27,48], [192,32,58], [110,17,36], [220,60,80]];
+  function mkParticle() {
+    const c = RR[Math.floor(Math.random() * RR.length)];
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.4 + .4,
+      ox: Math.random() * W,
+      oy: Math.random() * H,
+      speed: Math.random() * .004 + .001,
+      phase: Math.random() * Math.PI * 2,
+      amp: Math.random() * 60 + 20,
+      alpha: Math.random() * .35 + .08,
+      color: `${c[0]},${c[1]},${c[2]}`,
+    };
+  }
+
+  for (let i = 0; i < 55; i++) particles.push(mkParticle());
+
+  let raf;
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.phase += p.speed;
+      p.x = p.ox + Math.sin(p.phase) * p.amp;
+      p.y = p.oy + Math.cos(p.phase * .7) * p.amp * .6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
+      ctx.fill();
+    });
+    raf = requestAnimationFrame(draw);
+  }
+
+  // Only run when hero is visible — pause on scroll away
+  const heroEl = document.getElementById('hero');
+  const visObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { if (!raf) raf = requestAnimationFrame(draw); }
+      else { cancelAnimationFrame(raf); raf = null; }
+    });
+  }, { threshold: .01 });
+  visObs.observe(heroEl);
+})();
+
+/* ── B. Custom luxury cursor (desktop only) ── */
+(function () {
+  if (window.matchMedia('(pointer:coarse)').matches) return; // skip touch
+
+  const dot  = Object.assign(document.createElement('div'), { id: 'cur-dot'  });
+  const ring = Object.assign(document.createElement('div'), { id: 'cur-ring' });
+  document.body.append(dot, ring);
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #cur-dot, #cur-ring {
+      position:fixed; border-radius:50%; pointer-events:none;
+      z-index:99998; transform:translate(-50%,-50%);
+      transition:opacity .3s;
+    }
+    #cur-dot  { width:6px; height:6px; background:var(--rr-red); }
+    #cur-ring {
+      width:32px; height:32px;
+      border:1px solid rgba(155,27,48,.55);
+      transition:transform .12s cubic-bezier(.16,1,.3,1), width .25s, height .25s, border-color .25s, opacity .3s;
+    }
+    body:has(a:hover) #cur-ring,
+    body:has(button:hover) #cur-ring,
+    body:has(.btn:hover) #cur-ring {
+      width:48px; height:48px;
+      border-color:rgba(155,27,48,.8);
+      background:rgba(155,27,48,.06);
+    }
+  `;
+  document.head.appendChild(style);
+
+  let mx = -200, my = -200, rx = -200, ry = -200;
+  let cursorActive = false, cursorRaf = null;
+
+  function cursorLoop() {
+    rx += (mx - rx) * .14;
+    ry += (my - ry) * .14;
+    dot.style.left  = mx + 'px'; dot.style.top  = my + 'px';
+    ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+    if (cursorActive) cursorRaf = requestAnimationFrame(cursorLoop);
+  }
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    if (!cursorActive) {
+      cursorActive = true;
+      dot.style.opacity = '1'; ring.style.opacity = '1';
+      cursorRaf = requestAnimationFrame(cursorLoop);
+    }
+  }, { passive:true });
+  document.addEventListener('mouseleave', () => {
+    cursorActive = false;
+    dot.style.opacity = '0'; ring.style.opacity = '0';
+    if (cursorRaf) { cancelAnimationFrame(cursorRaf); cursorRaf = null; }
+  });
+})();
+
+/* ── C. Enhanced 3D card tilt — RAF throttled, no backgroundImage repaint ── */
+(function () {
+  if (window.matchMedia('(pointer:coarse)').matches) return; // skip touch
+  const selectors = '.svc, .venture-card, .testi-card, .who-card, .proj, .why-item, .step';
+  document.querySelectorAll(selectors).forEach(card => {
+    let rafId = null;
+    card.addEventListener('mousemove', e => {
+      if (rafId) return; // throttle to one frame
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const r = card.getBoundingClientRect();
+        const xRel = (e.clientX - r.left) / r.width  - .5;
+        const yRel = (e.clientY - r.top)  / r.height - .5;
+        card.style.transform = `perspective(700px) rotateX(${-(yRel*7)}deg) rotateY(${xRel*7}deg) translateZ(4px)`;
+        card.style.transition = 'transform .08s linear';
+      });
+    }, { passive:true });
+    card.addEventListener('mouseleave', () => {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      card.style.transform = '';
+      card.style.transition = 'transform .5s cubic-bezier(.16,1,.3,1), background .4s, box-shadow .4s';
+    });
+  });
+})();
+
+/* ── D. Section heading split-char animation ── */
+(function () {
+  const heads = document.querySelectorAll('.about-h2, .svc-h2, .proj-h2, .why-h2, .testi-h2, .contact-h2');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting || e.target.dataset.split) return;
+      e.target.dataset.split = '1';
+      // Animate em italic children with a red glow burst
+      const em = e.target.querySelector('em');
+      if (em) {
+        em.style.transition = 'none';
+        em.style.textShadow = '0 0 40px rgba(155,27,48,.7)';
+        setTimeout(() => {
+          em.style.transition = 'text-shadow 1.2s ease';
+          em.style.textShadow = '0 0 0px rgba(155,27,48,0)';
+        }, 50);
+      }
+    });
+  }, { threshold: .4 });
+  heads.forEach(h => obs.observe(h));
+})();
+
+/* ── E. Section heading red glow on reveal ── */
+
+/* ── F. (section flash removed — caused layout reflow on every section entry) ── */
+
+/* ── G. Magnetic nav links ── */
+(function () {
+  document.querySelectorAll('.nav-list a, .nav-cta').forEach(el => {
+    el.addEventListener('mousemove', e => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left - r.width  / 2) * .25;
+      const y = (e.clientY - r.top  - r.height / 2) * .3;
+      el.style.transform = `translate(${x}px,${y}px)`;
+      el.style.transition = 'transform .1s ease';
+    });
+    el.addEventListener('mouseleave', () => {
+      el.style.transform = '';
+      el.style.transition = 'transform .55s cubic-bezier(.16,1,.3,1)';
+    });
+  });
+})();
+
+/* ══════════════════════════════════════════════════
+   SERVICE FLIP CARDS + PRICING OVERLAY ENGINE
+══════════════════════════════════════════════════ */
+
+/* ── Pricing data for all 9 services ── */
+const SERVICES = [
+  {
+    name: 'Business Website Development',
+    plans: [
+      {
+        tier:'Starter', name:'Presence', tagline:'Perfect for small businesses going digital for the first time.',
+        price:'50,000', featured:false,
+        features:[
+          {dot:'yes', text:'Up to 5 pages (Home, About, Services, Contact, 1 custom)'},
+          {dot:'yes', text:'Mobile-first responsive design'},
+          {dot:'yes', text:'Contact form + WhatsApp button'},
+          {dot:'yes', text:'Google Analytics + Search Console setup'},
+          {dot:'yes', text:'Basic SEO foundation (meta, schema)'},
+          {dot:'yes', text:'3 rounds of design revisions'},
+          {dot:'add', text:'Blog / News section (₹8,000 add-on)'},
+          {dot:'no',  text:'Custom CMS dashboard'},
+          {dot:'no',  text:'API integrations'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Authority', tagline:'For established businesses ready to project premium credibility online.',
+        price:'1,10,000', featured:true, badge:'Most Popular',
+        features:[
+          {dot:'yes', text:'Up to 12 pages with custom animations'},
+          {dot:'yes', text:'Premium UI/UX — hand-crafted, zero templates'},
+          {dot:'yes', text:'CMS dashboard (Sanity / Contentful)'},
+          {dot:'yes', text:'Blog, gallery, team, testimonials modules'},
+          {dot:'yes', text:'Advanced SEO + schema + sitemap'},
+          {dot:'yes', text:'WhatsApp CTA + lead capture form'},
+          {dot:'yes', text:'Speed optimised — sub-2s load guaranteed'},
+          {dot:'yes', text:'3 months free maintenance'},
+          {dot:'add', text:'E-commerce add-on (₹55,000)'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'Dominance', tagline:'Multi-department sites, complex integrations, and board-level digital presence.',
+        price:'2,50,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Unlimited pages + multi-language'},
+          {dot:'yes', text:'Custom web application features'},
+          {dot:'yes', text:'ERP / CRM / third-party API integration'},
+          {dot:'yes', text:'Advanced analytics + heatmap setup'},
+          {dot:'yes', text:'Dedicated staging environment'},
+          {dot:'yes', text:'Priority support — 4-hour SLA'},
+          {dot:'yes', text:'6 months maintenance included'},
+          {dot:'yes', text:'Custom domain + SSL + CDN setup'},
+          {dot:'yes', text:'Bespoke pricing after discovery call'},
+        ]
+      }
+    ]
+  },
+  {
+    name: 'E-Commerce Website Solutions',
+    plans: [
+      {
+        tier:'Starter', name:'Launch Store', tagline:'Get your products online with a clean, fast, functional store.',
+        price:'75,000', featured:false,
+        features:[
+          {dot:'yes', text:'Up to 100 products'},
+          {dot:'yes', text:'Razorpay / UPI / COD payment gateway'},
+          {dot:'yes', text:'GST-compliant invoice generation'},
+          {dot:'yes', text:'Basic inventory management'},
+          {dot:'yes', text:'Mobile-first product pages'},
+          {dot:'add', text:'WhatsApp order notifications (₹6,000)'},
+          {dot:'no',  text:'Abandoned cart recovery'},
+          {dot:'no',  text:'Loyalty / referral program'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Scale Store', tagline:'Full-featured commerce with automation to drive and recover revenue.',
+        price:'1,80,000', featured:true, badge:'Best Value',
+        features:[
+          {dot:'yes', text:'Up to 500 products + variants'},
+          {dot:'yes', text:'Razorpay + Stripe + UPI all gateways'},
+          {dot:'yes', text:'Abandoned cart email + WhatsApp recovery'},
+          {dot:'yes', text:'Customer accounts + wishlist'},
+          {dot:'yes', text:'Discount codes + flash sale scheduler'},
+          {dot:'yes', text:'Product reviews + Q&A module'},
+          {dot:'yes', text:'GST reports + inventory alerts'},
+          {dot:'yes', text:'3 months maintenance included'},
+          {dot:'add', text:'Mobile app (React Native) — ₹1,20,000'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'Commerce Platform', tagline:'High-volume, multi-vendor, or marketplace-grade commerce infrastructure.',
+        price:'4,00,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Unlimited products + multi-warehouse'},
+          {dot:'yes', text:'Multi-vendor marketplace capability'},
+          {dot:'yes', text:'AI product recommendations'},
+          {dot:'yes', text:'ERP / Tally / Zoho integration'},
+          {dot:'yes', text:'Custom mobile app included'},
+          {dot:'yes', text:'Dedicated server + CDN'},
+          {dot:'yes', text:'24×7 priority support'},
+          {dot:'yes', text:'SLA-backed uptime guarantee'},
+        ]
+      }
+    ]
+  },
+  {
+    name: 'Hotel & Restaurant Websites',
+    plans: [
+      {
+        tier:'Starter', name:'Digital Menu', tagline:'Elegant online presence with menu and contact — ideal for restaurants.',
+        price:'40,000', featured:false,
+        features:[
+          {dot:'yes', text:'4 pages: Home, Menu, Gallery, Contact'},
+          {dot:'yes', text:'Digital menu with categories + photos'},
+          {dot:'yes', text:'Google Maps embed + reviews widget'},
+          {dot:'yes', text:'WhatsApp order / reservation CTA'},
+          {dot:'yes', text:'Mobile-optimised for in-restaurant QR'},
+          {dot:'no',  text:'Online reservation system'},
+          {dot:'no',  text:'Payment gateway'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Booking Engine', tagline:'Commission-free reservations that put you in control of your guest journey.',
+        price:'1,20,000', featured:true, badge:'Recommended',
+        features:[
+          {dot:'yes', text:'Full website + booking calendar'},
+          {dot:'yes', text:'Commission-free direct reservations'},
+          {dot:'yes', text:'Room / table availability manager'},
+          {dot:'yes', text:'Pre-payment via Razorpay'},
+          {dot:'yes', text:'Email + WhatsApp booking confirmations'},
+          {dot:'yes', text:'Guest review management module'},
+          {dot:'yes', text:'Multi-language (Hindi, English, Telugu)'},
+          {dot:'add', text:'Channel manager integration (₹25,000)'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'Brand Platform', tagline:'Multi-property hotel groups needing a unified digital presence.',
+        price:'2,80,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Multi-property site with unified brand'},
+          {dot:'yes', text:'Loyalty program + membership portal'},
+          {dot:'yes', text:'PMS integration (Hotelogix, Opera)'},
+          {dot:'yes', text:'OTA parity monitoring'},
+          {dot:'yes', text:'Revenue management dashboard'},
+          {dot:'yes', text:'Concierge chatbot included'},
+          {dot:'yes', text:'6 months support + training'},
+        ]
+      }
+    ]
+  },
+  {
+    name: 'AI Chatbot Development',
+    plans: [
+      {
+        tier:'Starter', name:'Smart FAQ Bot', tagline:'AI that answers your top 50 questions — 24×7, without hiring staff.',
+        price:'35,000', featured:false,
+        features:[
+          {dot:'yes', text:'GPT-4o powered, trained on your content'},
+          {dot:'yes', text:'Website embed widget'},
+          {dot:'yes', text:'Up to 50 Q&A knowledge base'},
+          {dot:'yes', text:'Lead name + email capture'},
+          {dot:'yes', text:'WhatsApp handoff on escalation'},
+          {dot:'no',  text:'CRM integration'},
+          {dot:'no',  text:'Custom persona / brand voice'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Sales AI Agent', tagline:'A brand-voiced AI that qualifies leads, books calls, and never sleeps.',
+        price:'95,000', featured:true, badge:'Most Powerful',
+        features:[
+          {dot:'yes', text:'Claude 3.5 / GPT-4o with RAG on docs'},
+          {dot:'yes', text:'Custom brand persona + voice tone'},
+          {dot:'yes', text:'Website + WhatsApp + Instagram DM'},
+          {dot:'yes', text:'Lead qualification + scoring'},
+          {dot:'yes', text:'Calendly / Google Calendar booking'},
+          {dot:'yes', text:'CRM push (HubSpot / Zoho / Sheets)'},
+          {dot:'yes', text:'Multilingual: Hindi, Telugu, English'},
+          {dot:'yes', text:'Monthly analytics report'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'AI Operations Suite', tagline:'End-to-end AI automation across customer service, sales, and operations.',
+        price:'2,20,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Multi-agent AI system'},
+          {dot:'yes', text:'Voice bot (phone + WhatsApp audio)'},
+          {dot:'yes', text:'ERP / inventory query capability'},
+          {dot:'yes', text:'Internal HR / IT helpdesk bot'},
+          {dot:'yes', text:'Custom fine-tuned model (if required)'},
+          {dot:'yes', text:'Real-time dashboard + conversation logs'},
+          {dot:'yes', text:'Dedicated AI engineer support'},
+        ]
+      }
+    ]
+  },
+  {
+    name: 'Landing Page Design',
+    plans: [
+      {
+        tier:'Starter', name:'Launch Page', tagline:'One page, one goal — built and live within 48 hours.',
+        price:'18,000', featured:false,
+        features:[
+          {dot:'yes', text:'Single conversion-focused page'},
+          {dot:'yes', text:'Mobile-first design'},
+          {dot:'yes', text:'Lead form → email/WhatsApp delivery'},
+          {dot:'yes', text:'Google Analytics pixel setup'},
+          {dot:'yes', text:'48-hour delivery'},
+          {dot:'no',  text:'A/B testing variants'},
+          {dot:'no',  text:'Ad tracking pixels'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Conversion Machine', tagline:'Data-driven page with tracking, automation, and A/B testing built in.',
+        price:'45,000', featured:true, badge:'Best ROI',
+        features:[
+          {dot:'yes', text:'Premium conversion-optimised design'},
+          {dot:'yes', text:'Meta + Google Ads pixel setup'},
+          {dot:'yes', text:'A/B testing framework (2 variants)'},
+          {dot:'yes', text:'Form → CRM + WhatsApp automation'},
+          {dot:'yes', text:'Heatmap tool integration (Hotjar)'},
+          {dot:'yes', text:'Speed score 95+ guaranteed'},
+          {dot:'yes', text:'Thank-you page + email sequence setup'},
+          {dot:'add', text:'Extra variants (₹8,000 per variant)'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'Campaign Hub', tagline:'Multi-variant campaigns with full funnel tracking and CRM automation.',
+        price:'1,00,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Up to 5 landing page variants'},
+          {dot:'yes', text:'Full funnel: ad → landing → thank-you → email'},
+          {dot:'yes', text:'Custom domain per campaign'},
+          {dot:'yes', text:'CRM pipeline automation'},
+          {dot:'yes', text:'Monthly conversion report'},
+          {dot:'yes', text:'Retargeting pixel strategy'},
+        ]
+      }
+    ]
+  },
+  {
+    name: 'Website Redesign & Optimisation',
+    plans: [
+      {
+        tier:'Starter', name:'Refresh', tagline:'Visual update and speed fix for sites that look dated or load slowly.',
+        price:'30,000', featured:false,
+        features:[
+          {dot:'yes', text:'Visual redesign of up to 5 pages'},
+          {dot:'yes', text:'Core Web Vitals remediation'},
+          {dot:'yes', text:'Mobile responsiveness fix'},
+          {dot:'yes', text:'Image optimisation + lazy loading'},
+          {dot:'no',  text:'Full UX audit'},
+          {dot:'no',  text:'Content restructure'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Overhaul', tagline:'Full strategic redesign with UX research, content restructure, and performance lift.',
+        price:'90,000', featured:true, badge:'Comprehensive',
+        features:[
+          {dot:'yes', text:'Full UX audit + heatmap analysis'},
+          {dot:'yes', text:'Brand-consistent visual overhaul'},
+          {dot:'yes', text:'Content restructure + SEO re-map'},
+          {dot:'yes', text:'Core Web Vitals remediation'},
+          {dot:'yes', text:'Zero downtime migration'},
+          {dot:'yes', text:'30 days post-launch support'},
+          {dot:'yes', text:'Google Analytics 4 re-setup'},
+          {dot:'add', text:'Copywriting refresh (₹15,000)'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'Platform Migration', tagline:'Full re-platform with data migration, custom dev, and phased rollout.',
+        price:'2,00,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Platform migration (e.g. Wix → custom)'},
+          {dot:'yes', text:'Full data + content migration'},
+          {dot:'yes', text:'Phased rollout plan'},
+          {dot:'yes', text:'Redirect strategy to preserve SEO'},
+          {dot:'yes', text:'Load testing before go-live'},
+          {dot:'yes', text:'60 days post-launch support'},
+        ]
+      }
+    ]
+  },
+  {
+    name: 'SEO & Performance Setup',
+    plans: [
+      {
+        tier:'Starter', name:'Foundation', tagline:'Technical SEO baseline — the non-negotiables done right.',
+        price:'15,000', featured:false,
+        features:[
+          {dot:'yes', text:'80-point technical SEO audit'},
+          {dot:'yes', text:'Google Search Console + Sitemap'},
+          {dot:'yes', text:'Meta tags + schema.org setup'},
+          {dot:'yes', text:'Image alt tags + compression'},
+          {dot:'yes', text:'Basic speed optimisation'},
+          {dot:'no',  text:'Monthly reporting'},
+          {dot:'no',  text:'Link building'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Visibility', tagline:'Monthly SEO management to climb Google rankings consistently.',
+        price:'22,000', featured:true, badge:'Monthly Retainer',
+        features:[
+          {dot:'yes', text:'Everything in Foundation'},
+          {dot:'yes', text:'Monthly keyword strategy + tracking'},
+          {dot:'yes', text:'2 SEO blog articles per month'},
+          {dot:'yes', text:'Google My Business optimisation'},
+          {dot:'yes', text:'Local SEO + Maps ranking'},
+          {dot:'yes', text:'Monthly ranking + traffic report'},
+          {dot:'yes', text:'Competitor gap analysis quarterly'},
+          {dot:'add', text:'Google Ads management (₹12,000/mo)'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'Dominance', tagline:'Aggressive SEO + paid media for businesses targeting top-3 rankings.',
+        price:'55,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Everything in Visibility'},
+          {dot:'yes', text:'4 long-form articles per month'},
+          {dot:'yes', text:'High-DA link building campaign'},
+          {dot:'yes', text:'Technical crawl monitoring weekly'},
+          {dot:'yes', text:'Core algorithm update monitoring'},
+          {dot:'yes', text:'Google Ads + Meta Ads managed'},
+          {dot:'yes', text:'Dedicated monthly strategy call'},
+        ]
+      }
+    ]
+  },
+  {
+    name: 'UI / UX Design',
+    plans: [
+      {
+        tier:'Starter', name:'Wireframe', tagline:'Structural design blueprint — flows and screens without final visuals.',
+        price:'25,000', featured:false,
+        features:[
+          {dot:'yes', text:'Up to 10 screen wireframes in Figma'},
+          {dot:'yes', text:'User flow mapping'},
+          {dot:'yes', text:'Basic prototype for feedback'},
+          {dot:'yes', text:'Developer handoff notes'},
+          {dot:'no',  text:'High-fidelity visual design'},
+          {dot:'no',  text:'Design system'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Design System', tagline:'Complete high-fidelity UI with design system ready for any developer.',
+        price:'70,000', featured:true, badge:'Full Design',
+        features:[
+          {dot:'yes', text:'User research + persona mapping'},
+          {dot:'yes', text:'Up to 25 high-fidelity Figma screens'},
+          {dot:'yes', text:'Interactive clickable prototype'},
+          {dot:'yes', text:'Design system + component library'},
+          {dot:'yes', text:'Brand-consistent colour + type system'},
+          {dot:'yes', text:'Handoff with Zeplin / Figma dev specs'},
+          {dot:'yes', text:'Unlimited revisions in design phase'},
+          {dot:'add', text:'Motion design specs (₹15,000)'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'Product Design', tagline:'End-to-end product design for SaaS, apps, and complex digital systems.',
+        price:'1,50,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Full product UX research + testing'},
+          {dot:'yes', text:'Unlimited screens across all platforms'},
+          {dot:'yes', text:'Usability testing with real users'},
+          {dot:'yes', text:'Accessibility audit (WCAG 2.1 AA)'},
+          {dot:'yes', text:'Motion + micro-interaction specs'},
+          {dot:'yes', text:'Ongoing design retainer available'},
+        ]
+      }
+    ]
+  },
+  {
+    name: 'Maintenance & Support',
+    plans: [
+      {
+        tier:'Starter', name:'Watchkeeper', tagline:'Uptime monitoring and security — peace of mind at minimum cost.',
+        price:'5,000', featured:false,
+        features:[
+          {dot:'yes', text:'Daily uptime monitoring'},
+          {dot:'yes', text:'Weekly security scan'},
+          {dot:'yes', text:'Plugin / dependency updates'},
+          {dot:'yes', text:'Monthly health report'},
+          {dot:'yes', text:'1 content update per month'},
+          {dot:'no',  text:'Priority support SLA'},
+          {dot:'no',  text:'Domain / hosting renewal management'},
+        ]
+      },
+      {
+        tier:'Growth', name:'Steward', tagline:'Full-service ongoing care — your site, always current and always fast.',
+        price:'12,000', featured:true, badge:'Most Popular',
+        features:[
+          {dot:'yes', text:'Everything in Watchkeeper'},
+          {dot:'yes', text:'4 content updates per month'},
+          {dot:'yes', text:'Priority WhatsApp support (12hr SLA)'},
+          {dot:'yes', text:'Domain + hosting renewal managed'},
+          {dot:'yes', text:'Performance score monitoring'},
+          {dot:'yes', text:'Quarterly UX / SEO review'},
+          {dot:'yes', text:'Annual SSL certificate renewal'},
+          {dot:'add', text:'Extra content updates — ₹1,500 each'},
+        ]
+      },
+      {
+        tier:'Enterprise', name:'Retainer Partner', tagline:'Dedicated engineering hours each month for continuous improvement.',
+        price:'28,000+', featured:false,
+        features:[
+          {dot:'yes', text:'Everything in Steward'},
+          {dot:'yes', text:'10 dev hours/month for new features'},
+          {dot:'yes', text:'4-hour emergency response SLA'},
+          {dot:'yes', text:'Dedicated Slack channel'},
+          {dot:'yes', text:'Monthly strategy + roadmap call'},
+          {dot:'yes', text:'Staging environment maintained'},
+          {dot:'yes', text:'Annual full site audit included'},
+        ]
+      }
+    ]
+  }
+];
+
+const INFRA = [
+  {cat:'Domain', name:'.com Domain', provider:'GoDaddy / Namecheap', price:'₹850 – ₹1,200/yr', note:'Renewed annually. .in domains from ₹500/yr. Premium domains may cost more.'},
+  {cat:'Domain', name:'.in / .co.in Domain', provider:'GoDaddy / BigRock', price:'₹499 – ₹800/yr', note:'Best for India-first businesses targeting local search.'},
+  {cat:'Hosting', name:'Shared Hosting', provider:'Hostinger / SiteGround', price:'₹3,000 – ₹8,000/yr', note:'Suitable for Starter sites. Up to 25,000 visitors/month.'},
+  {cat:'Hosting', name:'Cloud VPS (2GB)', provider:'DigitalOcean / Linode', price:'₹1,200 – ₹2,500/mo', note:'Recommended for Growth+ sites. Full control, scalable.'},
+  {cat:'Hosting', name:'Vercel / Netlify Pro', provider:'Vercel Inc.', price:'₹1,700/mo', note:'Best for Next.js / React apps. Global CDN, zero-config.'},
+  {cat:'Database', name:'PostgreSQL (Managed)', provider:'Supabase / Neon', price:'₹0 – ₹2,000/mo', note:'Supabase free tier covers most Starter projects.'},
+  {cat:'Database', name:'MongoDB Atlas', provider:'MongoDB Inc.', price:'₹0 – ₹3,500/mo', note:'M0 free tier for small data. M10 from $57/mo for production.'},
+  {cat:'Database', name:'Firebase Firestore', provider:'Google Cloud', price:'₹0 – ₹4,000/mo', note:'Pay-as-you-go. Free tier covers most MVP use cases.'},
+  {cat:'AI / API', name:'OpenAI GPT-4o', provider:'OpenAI', price:'₹0.42/1K tokens', note:'~₹8–25/day for a moderately active chatbot.'},
+  {cat:'AI / API', name:'Anthropic Claude 3.5', provider:'Anthropic', price:'₹0.25/1K tokens', note:'Often cheaper than GPT-4o for long-context tasks.'},
+  {cat:'Payments', name:'Razorpay Gateway', provider:'Razorpay', price:'2% per transaction', note:'No setup fee. Supports UPI, cards, net banking, wallets.'},
+  {cat:'Email', name:'Google Workspace', provider:'Google', price:'₹136/user/mo', note:'Professional email (@yourdomain). Includes Drive, Meet.'},
+  {cat:'SSL', name:'SSL Certificate', provider:'Let\'s Encrypt / Cloudflare', price:'₹0 – ₹500/yr', note:'Let\'s Encrypt is free and auto-renewing. Included in all plans.'},
+  {cat:'CDN', name:'Cloudflare Pro', provider:'Cloudflare', price:'₹1,700/mo', note:'Free tier covers most sites. Pro adds WAF + analytics.'},
+  {cat:'CMS', name:'Sanity CMS', provider:'Sanity.io', price:'₹0 – ₹4,200/mo', note:'Free tier: 3 users, 100K API reads/mo. Sufficient for most sites.'},
+];
+
+const FAQS = [
+  {q:'Are these prices fixed or negotiable?', a:'Plans are starting frameworks. Your final investment is determined after a discovery call where I understand your exact requirements, timeline, and goals. Complex projects may cost more; simpler ones may cost less.'},
+  {q:'Do domain and hosting costs come on top of the development fee?', a:'Yes. The prices shown are for design and development work only. Domain registration, hosting, API keys, and third-party services are billed directly from those providers to you — full transparency, no markup.'},
+  {q:'Which hosting do you recommend for an Indian business?', a:'For Starter sites: Hostinger\'s Business plan (₹3,500/yr) offers excellent value. For Growth+ sites: a DigitalOcean Droplet (₹1,700/mo) with Cloudflare in front gives you full control and speed. I set this all up for you.'},
+  {q:'Can I get a custom plan not listed here?', a:'Absolutely. Most of my clients have unique requirements that don\'t fit neatly into tiers. Book a discovery call — no obligation, no hard sell — and I\'ll send a bespoke proposal within 24 hours.'},
+  {q:'How long does a typical project take?', a:'Starter plans: 1–2 weeks. Growth plans: 3–5 weeks. Enterprise plans: 6–12 weeks depending on complexity. Timeline is confirmed at project kickoff.'},
+  {q:'Do you offer EMI or instalment payments?', a:'Yes. Projects above ₹50,000 can be split: 50% to start, 25% at design approval, 25% at launch. For retainer plans, monthly billing is standard.'},
+  {q:'What happens after my site is launched?', a:'All plans include a minimum of 7 days post-launch support. Growth plans include 3 months, Enterprise includes 6 months. After that, the Maintenance & Support retainer keeps everything current and secure.'},
+];
+
+/* ── Flip card logic ── */
+document.querySelectorAll('.svc-flip').forEach(card => {
+  card.addEventListener('click', e => {
+    if (e.target.closest('.svc-price-btn')) return; // let button handle
+    card.classList.toggle('flipped');
+  });
+});
+
+/* ── Pricing overlay ── */
+let currentSvc = 0;
+
+function openPricing(idx) {
+  currentSvc = idx;
+  const svc = SERVICES[idx];
+
+  // Update header
+  document.getElementById('pricing-service-label').textContent = svc.name;
+  document.getElementById('pricing-title').innerHTML = 'Investment &amp; <em>Plans</em>';
+
+  // Render plans
+  const plansEl = document.getElementById('pricing-plans');
+  plansEl.innerHTML = svc.plans.map(p => `
+    <div class="plan-card ${p.featured ? 'plan-featured' : ''}">
+      ${p.badge ? `<div class="plan-badge">${p.badge}</div>` : ''}
+      <div class="plan-tier">${p.tier}</div>
+      <div class="plan-name">${p.name}</div>
+      <div class="plan-tagline">${p.tagline}</div>
+      <div class="plan-price">
+        <span class="plan-price-currency">₹</span>
+        <span class="plan-price-amount">${p.price}</span>
+      </div>
+      <div class="plan-price-note">One-time · INR · Excl. GST &amp; infra costs</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        ${p.features.map(f => `
+          <li>
+            <span class="pf-dot pf-${f.dot}"></span>
+            ${f.text}
+          </li>
+        `).join('')}
+      </ul>
+      <button class="plan-cta" onclick="window.location='#contact'; closePricing()">
+        Get a Custom Quote
+      </button>
+    </div>
+  `).join('');
+
+  // Render infra
+  const infraEl = document.getElementById('infra-grid');
+  infraEl.innerHTML = INFRA.map(i => `
+    <div class="infra-item">
+      <div class="infra-cat">${i.cat}</div>
+      <div class="infra-name">${i.name}</div>
+      <div class="infra-provider">${i.provider}</div>
+      <div class="infra-price">${i.price}</div>
+      <div class="infra-note">${i.note}</div>
+    </div>
+  `).join('');
+
+  // Render FAQ
+  const faqEl = document.getElementById('faq-list');
+  faqEl.innerHTML = FAQS.map((f, i) => `
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
+        ${f.q}
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>${f.a}</p></div>
+    </div>
+  `).join('');
+
+  // Open overlay
+  const overlay = document.getElementById('pricing-overlay');
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  scrollLock(true, 'pricing-overlay');
+  setTimeout(() => { overlay.scrollTop = 0; }, 50);
+}
+
+function closePricing() {
+  const overlay = document.getElementById('pricing-overlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+  scrollLock(false, 'pricing-overlay');
+}
+
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+// Close pricing on Escape or backdrop click — handled by unified Escape listener below
+document.getElementById('pricing-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('pricing-overlay')) closePricing();
+});
+
+/* ══════════════════════════════════════════════════
+   FEATURE OVERLAY ENGINE
+══════════════════════════════════════════════════ */
+
+/* ── Unified scroll-lock manager — position:fixed approach, never gets stuck ── */
+const _scrollLocks = new Set();
+let _savedScrollY = 0;
+
+function scrollLock(lock, key) {
+  if (lock) {
+    _scrollLocks.add(key);
+    if (_scrollLocks.size === 1) {
+      _savedScrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${_savedScrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+    }
+  } else {
+    _scrollLocks.delete(key);
+    if (_scrollLocks.size === 0) {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, _savedScrollY);
+    }
+  }
+}
+
+/* Safety net — always unlock scroll on page show or tab refocus */
+function unlockScrollSafety() {
+  if (document.body.style.position === 'fixed') {
+    const savedY = _savedScrollY || parseInt(document.body.style.top || '0') * -1;
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.overflow = '';
+    _scrollLocks.clear();
+    window.scrollTo(0, savedY);
+  }
+}
+window.addEventListener('pageshow', unlockScrollSafety);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') unlockScrollSafety();
+});
+
+function openOverlay(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('open');
+  el.setAttribute('aria-hidden', 'false');
+  scrollLock(true, id);
+  setTimeout(() => { el.scrollTop = 0; }, 50);
+}
+function closeOverlay(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('open');
+  el.setAttribute('aria-hidden', 'true');
+  scrollLock(false, id);
+}
+['process-overlay','venture-overlay','case-overlay'].forEach(oid => {
+  const el = document.getElementById(oid);
+  if (el) el.addEventListener('click', e => { if (e.target === el) closeOverlay(oid); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const ids = ['process-overlay','venture-overlay','case-overlay'];
+  const open = ids.find(id => document.getElementById(id)?.classList.contains('open'));
+  if (open) closeOverlay(open);
+});
+
+
+function toggleProcTimeline(btn) {
+  const body = btn.nextElementSibling;
+  const isOpen = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', String(!isOpen));
+  const icon = btn.querySelector('.proc-tl-icon');
+  const hint = btn.querySelector('.proc-tl-hint');
+  if (icon) icon.textContent = isOpen ? '+' : '×';
+  if (hint) hint.textContent = isOpen ? 'Expand' : 'Collapse';
+  // Use class toggle (not hidden attr) so CSS max-height transition works
+  body.classList.toggle('open', !isOpen);
+  body.removeAttribute('hidden');
+}
+
+/* ── 2. VENTURE DETAILS ── */
+const VENTURES_DATA = [
+  {
+    name:'FloMKa', tagline:'The Pulse of AI Intelligence',
+    status:'live', statusLabel:'Live Product', statusColor:'#2d8a4e',
+    url:'https://flo-m-ka.vercel.app/',
+    role:'Founder & CEO', founded:'2024', stage:'Live & Growing',
+    problem:'AI professionals have no single destination for curated intelligence — tools, research, trends, and community signals are scattered across dozens of sources.',
+    solution:'FloMKa aggregates and curates AI intelligence in a structured, beautiful format: feeds, tool discovery, trend tracking, community signals, and idea generation in one place.',
+    features:['Curated AI news & research feed','AI tool discovery & comparison engine','Trend analysis with signal scoring','Community insights layer','Idea generation from AI trends','Personalised professional dashboard'],
+    tech:['Next.js 14','Tailwind CSS','Supabase','OpenAI API','Vercel','TypeScript'],
+    metrics:['Active since 2024','Growing user base','New tools tracked weekly'],
+  },
+  {
+    name:'Samadam', tagline:'Intelligent Grievance Resolution',
+    status:'building', statusLabel:'In Development', statusColor:'#C07830',
+    role:'Co-Founder', founded:'2024', stage:'MVP in Development',
+    problem:'Citizens filing institutional grievances face opaque processes, language barriers, and no way to understand the reasoning behind decisions. Trust suffers as a result.',
+    solution:'Samadam uses explainable AI to make grievance resolution transparent, multilingual, and comprehensible — every decision pathway visible, every status explained in plain language.',
+    features:['10 Indian language submission support','Explainable AI decision pathways','Real-time status tracking','Institutional admin dashboard','Bias detection & fairness monitoring','Voice input for low-literacy users'],
+    tech:['React Native','Python FastAPI','PostgreSQL','Anthropic Claude API','Azure','Bhashini API'],
+    metrics:['MVP targeted Q2 2025','Government partnership discussions active','Hindi, Telugu, Tamil as launch languages'],
+  },
+  {
+    name:'Nexhire', tagline:'Hiring, Reimagined with Intelligence',
+    status:'building', statusLabel:'In Development', statusColor:'#C07830',
+    role:'Co-Founder', founded:'2024', stage:'Early Development',
+    problem:'Traditional hiring is broken — candidates apply to hundreds of jobs with no feedback; employers wade through irrelevant CVs. Inefficient, biased, and demoralising on both sides.',
+    solution:'Nexhire uses AI-native matching beyond keyword filtering — evaluating skills, working style, values, and cultural fit for a faster, fairer, more human hiring experience.',
+    features:['AI candidate-role matching beyond keywords','Bias-aware evaluation with explainability','Async video interview + AI assessment','Candidate skills graph & portfolio parsing','Smart scheduling & offer workflow','Employer brand analytics'],
+    tech:['Next.js','Node.js','MongoDB','OpenAI Embeddings','Pinecone','AWS'],
+    metrics:['Design phase complete','India-first launch, then Southeast Asia','Beta targeted Q3 2025'],
+  },
+];
+
+function openVenture(idx) {
+  const v = VENTURES_DATA[idx];
+  const el = document.getElementById('venture-detail-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="fo-eyebrow"><span class="eyebrow">Venture Detail</span></div>
+    <div class="vd-name">${v.name}</div>
+    <div class="vd-tagline">${v.tagline}</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:32px;padding-bottom:28px;border-bottom:1px solid var(--c-rule-xs)">
+      <span style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:${v.statusColor};padding:4px 14px">${v.statusLabel}</span>
+      <span style="font-size:.78rem;color:var(--c-ash)">Role: <strong style="color:var(--c-ink)">${v.role}</strong></span>
+      <span style="font-size:.78rem;color:var(--c-ash)">Founded: <strong style="color:var(--c-ink)">${v.founded}</strong></span>
+      <span style="font-size:.78rem;color:var(--c-ash)">Stage: <strong style="color:var(--c-ink)">${v.stage}</strong></span>
+    </div>
+    <div class="vd-grid">
+      <div><div class="vd-section-title">The Problem</div><p class="vd-body">${v.problem}</p></div>
+      <div><div class="vd-section-title">The Solution</div><p class="vd-body">${v.solution}</p></div>
+    </div>
+    <div class="vd-grid">
+      <div>
+        <div class="vd-section-title">Key Features</div>
+        <ul class="vd-list">${v.features.map(f=>`<li>${f}</li>`).join('')}</ul>
+      </div>
+      <div>
+        <div class="vd-section-title">Tech Stack</div>
+        <div style="margin-bottom:24px">${v.tech.map(t=>`<span class="vd-tech-tag">${t}</span>`).join('')}</div>
+        <div class="vd-section-title">Status / Traction</div>
+        <ul class="vd-list">${v.metrics.map(m=>`<li>${m}</li>`).join('')}</ul>
+      </div>
+    </div>
+    ${v.url ? `<a href="${v.url}" target="_blank" rel="noopener" class="btn btn-dark" style="text-decoration:none;display:inline-flex"><span>Visit ${v.name} ↗</span></a>` : ''}
+  `;
+  openOverlay('venture-overlay');
+}
+
+/* ── 3. QUICK QUOTE CALCULATOR ── */
+
+
+
+
+
 </script>
+<!-- ══════════════════════════════════════
+     PROJECT DETAIL MODAL
+══════════════════════════════════════ -->
+<div id="proj-modal" aria-hidden="true">
+  <div id="proj-modal-page">
+    <button id="proj-modal-close" onclick="closeProjModal()" aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 1l14 14M15 1L1 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Close
+    </button>
+    <div id="proj-modal-body"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     VENTURE DETAIL MODAL
+══════════════════════════════════════ -->
+<div id="venture-modal" aria-hidden="true">
+  <div id="venture-modal-page">
+    <button id="venture-modal-close" onclick="closeVentureModal()" aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 1l14 14M15 1L1 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Close
+    </button>
+    <div id="venture-modal-body"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FLOATING WHATSAPP CTA
+══════════════════════════════════════ -->
+<a id="wa-float" href="https://wa.me/919100626094?text=Hi%20Bhanu%2C%20I%20found%20Manvora%20Intelligence%20and%20would%20like%20to%20discuss%20a%20project." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+  <svg id="wa-icon" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.858L.057 23.215a.75.75 0 00.912.912l5.357-1.478A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.703 9.703 0 01-4.95-1.356l-.355-.21-3.68 1.015 1.015-3.68-.21-.355A9.703 9.703 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+  </svg>
+  <span id="wa-label">Chat with Bhanu</span>
+</a>
+
+<!-- ══════════════════════════════════════
+     BACK TO TOP
+══════════════════════════════════════ -->
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<!-- ══════════════════════════════════════
+     COOKIE CONSENT
+══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════
+     VENTURE DETAIL OVERLAY
+══════════════════════════════════════ -->
+<div id="venture-overlay" aria-hidden="true">
+  <div class="feature-overlay-page">
+    <button class="feature-overlay-close" onclick="closeOverlay('venture-overlay')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Close
+    </button>
+    <div id="venture-detail-content"></div>
+  </div>
+</div>
+
+<!-- ── end overlays ── -->
+
+<div id="cookie-banner" role="dialog" aria-label="Cookie consent">
+  <div id="cookie-inner">
+    <div id="cookie-text">
+      <strong>This site uses no tracking cookies.</strong> Manvora Intelligence collects no personal data and serves no ads. Your enquiry form data is used only to respond to you.
+    </div>
+    <div id="cookie-actions">
+      <button id="cookie-ok" onclick="acceptCookies()">Understood</button>
+      <a href="#" id="cookie-policy">Privacy Policy</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
