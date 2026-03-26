@@ -436,7 +436,7 @@ a, button, [onclick] {
 .hero-trust-line {
   width: 20px;
   height: 1px;
-  background: var(--c-gold-pale);
+  background: var(--c-gold-rule);
   flex-shrink: 0;
 }
 .hero-trust span {
@@ -485,9 +485,8 @@ a, button, [onclick] {
 .hero-meta-inner {
   display: flex;
   align-items: center;
-  gap: 36px;
-  flex-wrap: nowrap;
-  overflow: hidden;
+  gap: 20px 36px;
+  flex-wrap: wrap;
 }
 .meta-chip {
   display: flex;
@@ -3265,6 +3264,8 @@ footer { border-top: 4px solid var(--c-gold) !important }
 body { cursor: none }
 @media (pointer:coarse) { body { cursor: auto } }
 
+/* Nav scroll settle animation */
+#nav.s {
   box-shadow: 0 1px 0 rgba(155,27,48,.18), 0 4px 24px rgba(0,0,0,.06);
   animation: navSettle .55s cubic-bezier(.16,1,.3,1) both;
 }
@@ -3452,7 +3453,7 @@ body { cursor: none }
 
 /* Who cards — left red slide */
 .who-card {
-  transition: background .35s, transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s;
+  transition: background .35s, padding-left .35s cubic-bezier(.16,1,.3,1), box-shadow .4s;
   position: relative; overflow: hidden;
 }
 .who-card::before {
@@ -3464,8 +3465,8 @@ body { cursor: none }
 }
 .who-card:hover::before { width:3px }
 .who-card:hover {
-  transform: translateX(6px);
-  box-shadow: -4px 0 0 var(--rr-red), 0 8px 32px rgba(155,27,48,.07);
+  padding-left: 16px;
+  box-shadow: 0 4px 24px rgba(155,27,48,.07);
 }
 .who-card-num { transition: text-shadow .4s, transform .4s }
 .who-card:hover .who-card-num { text-shadow:var(--rr-glow-sm); transform:scale(1.08) }
@@ -3688,7 +3689,7 @@ footer { position:relative }
   padding: 0 !important;
   background: transparent !important;
   overflow: visible !important;
-  height: 320px;
+  height: 340px;
 }
 .svc-inner {
   position: relative;
@@ -4514,15 +4515,21 @@ footer { position:relative }
 .proj:hover .proj-hint { opacity: 0 }
 
 
+@media (prefers-reduced-motion: reduce) {
   .svc:hover, .venture-card:hover, .testi-card:hover,
   .who-card:hover, .step:hover, .impact-item:hover { transform:none; box-shadow:none }
   .hero-word { animation-name:wordDrop }
   #impact::before, .about-card::before { display:none }
 }
 
-/* ═══════════════════════════════════════════════════════
-   SHARED FEATURE OVERLAY SYSTEM
-═══════════════════════════════════════════════════════ */
+/* ── Medium breakpoint: footer grid ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ft-top { grid-template-columns: 1.4fr 1fr 1fr; gap: 32px }
+  .ft-top > div:nth-child(4),
+  .ft-top > div:nth-child(5) { grid-column: auto }
+}
+
+/* ── Venture / feature overlay inner page ── */
 #process-overlay, #venture-overlay, #case-overlay {
   position: fixed;
   inset: 0;
@@ -6086,7 +6093,7 @@ footer { position:relative }
           <a href="https://github.com" target="_blank" rel="noopener" class="soc" aria-label="GitHub">
             <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
           </a>
-          <a href="/cdn-cgi/l/email-protection#076a6863626a656f6669723537373047606a666e6b2964686a" class="soc" aria-label="Email">
+          <a href="mailto:bhanu@manvoraintelligence.com" class="soc" aria-label="Email">
             <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
           </a>
         </div>
@@ -6124,7 +6131,7 @@ footer { position:relative }
       <div>
         <div class="ft-title">Contact</div>
         <ul class="ft-list">
-          <li><a href="/cdn-cgi/l/email-protection#432e2c27262e212b222d367173737403242e222a2f6d202c2e"><span class="__cf_email__" data-cfemail="0b66646f6e6669636a657e393b3b3c4b6c666a626725686466">[email&#160;protected]</span></a></li>
+          <li><a href="mailto:bhanu@manvoraintelligence.com">bhanu@manvoraintelligence.com</a></li>
           <li><a href="tel:+919100626094">+91 91006 26094</a></li>
           <li><a href="https://cognitive-portfolio.vercel.app" target="_blank" rel="noopener">Portfolio</a></li>
           <li><a href="#contact">Start a Project</a></li>
